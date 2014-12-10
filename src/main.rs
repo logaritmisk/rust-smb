@@ -65,17 +65,17 @@ fn main() {
 
     let mut previous : uint = get_ticks();
 
-    'event : loop {
+    loop {
         current = get_ticks();
         elapsed = current - previous;
         previous = current;
         lag += elapsed;
 
         match poll_event() {
-            Event::Quit(_) => break 'event,
+            Event::Quit(_) => break,
             Event::KeyDown(_, _, key, _, _, _) => {
                 if key == sdl2::keycode::KeyCode::Escape {
-                    break 'event;
+                    break;
                 } else if key == sdl2::keycode::KeyCode::Right {
                     player.vel_x = 4.0;
                 } else if key == sdl2::keycode::KeyCode::Left {

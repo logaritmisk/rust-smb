@@ -18,11 +18,19 @@ struct Player {
     y: f32,
     vel_x: f32,
     vel_y: f32,
+    gravity: f32,
 }
 
 impl Player {
     fn new(x: f32, y: f32) -> Player {
-        Player { x: x, y: y, vel_x: 0.0, vel_y: 0.0 }
+        Player { x: x, y: y, vel_x: 0.0, vel_y: 0.0, gravity: 0.3 }
+    }
+
+    pub fn update(&mut self) {
+        self.vel_y += self.gravity;
+
+        self.x += self.vel_x;
+        self.y += self.vel_y;
     }
 
     pub fn render(&self, renderer: &sdl2::render::Renderer) {
@@ -50,7 +58,6 @@ fn main() {
     let mut player = Player::new(390.0, 290.0);
 
     let mut on_ground = true;
-    let mut gravity : f32 = 0.3;
 
     let mut current : uint = 0;
     let mut elapsed : uint = 0;
@@ -96,10 +103,7 @@ fn main() {
         }
 
         while lag >= MS_PER_UPDATE {
-            player.vel_y += gravity;
-
-            player.x += player.vel_x;
-            player.y += player.vel_y;
+            player.update();
 
             if player.y > 290.0 {
                 player.y = 290.0;

@@ -43,7 +43,6 @@ fn main() {
         previous = current;
         lag += elapsed;
 
-        v_x = 0.0;
         match poll_event() {
             Event::Quit(_) => break 'event,
             Event::KeyDown(_, _, key, _, _, _) => {
@@ -55,15 +54,20 @@ fn main() {
                     v_x = -1.0;
                 }
             },
+            Event::KeyUp(_, _, key, _, _, _) => {
+                if key == sdl2::keycode::KeyCode::Right {
+                    v_x = 0.0;
+                } else if key == sdl2::keycode::KeyCode::Left {
+                    v_x = 0.0;
+                }
+            },
             _ => (),
         }
-
+        
         while lag >= MS_PER_UPDATE {
             x += v_x;
 
             lag -= MS_PER_UPDATE;
-
-            println!("lag: {}", lag);
         }
 
         let _ = renderer.set_draw_color(sdl2::pixels::Color::RGB(0, 0, 0));

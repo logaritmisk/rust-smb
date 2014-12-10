@@ -59,11 +59,10 @@ fn main() {
 
     let mut on_ground = true;
 
-    let mut current : uint = 0;
-    let mut elapsed : uint = 0;
-    let mut lag : uint = 0;
-
+    let mut current : uint;
+    let mut elapsed : uint;
     let mut previous : uint = get_ticks();
+    let mut lag : uint = 0;
 
     loop {
         current = get_ticks();

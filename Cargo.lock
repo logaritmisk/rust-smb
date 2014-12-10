@@ -3,19 +3,10 @@ name = "smb"
 version = "0.0.1"
 dependencies = [
  "sdl2 0.0.7 (registry+https://github.com/rust-lang/crates.io-index)",
- "sdl2_ttf 0.0.3 (git+https://github.com/andelf/rust-sdl2_ttf)",
 ]
 
 [[package]]
 name = "sdl2"
 version = "0.0.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-
-[[package]]
-name = "sdl2_ttf"
-version = "0.0.3"
-source = "git+https://github.com/andelf/rust-sdl2_ttf#614fdbed9f07208d280a41abf02cc91a401d6cb5"
-dependencies = [
- "sdl2 0.0.7 (registry+https://github.com/rust-lang/crates.io-index)",
-]
 

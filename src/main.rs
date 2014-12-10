@@ -13,26 +13,41 @@ const SCREEN_HEIGHT : int = 600;
 const MS_PER_UPDATE : uint = 10;
 
 
+struct Player {
+    x: f32,
+    y: f32,
+    vel_x: f32,
+    vel_y: f32,
+}
+
+impl Player {
+    fn new(x: f32, y: f32) -> Player {
+        Player { x: x, y: y, vel_x: 0.0, vel_y: 0.0 }
+    }
+
+    pub fn render(&self, renderer: &sdl2::render::Renderer) {
+        let player = Rect::new(self.x as i32, self.y as i32, 10, 10);
+
+        let _ = renderer.set_draw_color(sdl2::pixels::Color::RGB(0, 255, 0));
+        let _ = renderer.fill_rect(&player);
+    }
+}
+
+
 fn main() {
     sdl2::init(sdl2::INIT_EVERYTHING);
 
     let window = match Window::new("SMB", WindowPos::PosCentered, WindowPos::PosCentered, SCREEN_WIDTH, SCREEN_HEIGHT, OPENGL) {
         Ok(window) => window,
-        Err(err)   => panic!("failed to create window: {}", err)
+        Err(err) => panic!("failed to create window: {}", err)
     };
 
     let renderer = match sdl2::render::Renderer::from_window(window, sdl2::render::RenderDriverIndex::Auto, sdl2::render::ACCELERATED) {
         Ok(renderer) => renderer,
-        Err(err)     => panic!("failed to create renderer: {}", err)
+        Err(err) => panic!("failed to create renderer: {}", err)
     };
 
-    let mut player = Rect::new(0, 290, 10, 10);
-
-    let mut x : f32 = 390.0;
-    let mut y : f32 = 290.0;
-
-    let mut v_x : f32 = 0.0;
-    let mut v_y : f32 = 0.0;
+    let mut player = Player::new(390.0, 290.0);
 
     let mut on_ground = true;
     let mut gravity : f32 = 0.3;
@@ -55,12 +70,12 @@ fn main() {
                 if key == sdl2::keycode::KeyCode::Escape {
                     break 'event;
                 } else if key == sdl2::keycode::KeyCode::Right {
-                    v_x = 4.0;
+                    player.vel_x = 4.0;
                 } else if key == sdl2::keycode::KeyCode::Left {
-                    v_x = -4.0;
+                    player.vel_x = -4.0;
                 } else if key == sdl2::keycode::KeyCode::Up {
                     if on_ground {
-                        v_y = -8.0;
+                        player.vel_y = -8.0;
 
                         on_ground = false;
                     }
@@ -68,12 +83,12 @@ fn main() {
             },
             Event::KeyUp(_, _, key, _, _, _) => {
                 if key == sdl2::keycode::KeyCode::Right {
-                    v_x = 0.0;
+                    player.vel_x = 0.0;
                 } else if key == sdl2::keycode::KeyCode::Left {
-                    v_x = 0.0;
+                    player.vel_x = 0.0;
                 } else if key == sdl2::keycode::KeyCode::Up {
-                    if v_y < -4.0 {
-                        v_y = -4.0;
+                    if player.vel_y < -4.0 {
+                        player.vel_y = -4.0;
                     }
                 }
             },
@@ -81,14 +96,14 @@ fn main() {
         }
 
         while lag >= MS_PER_UPDATE {
-            v_y += gravity;
+            player.vel_y += gravity;
 
-            x += v_x;
-            y += v_y;
+            player.x += player.vel_x;
+            player.y += player.vel_y;
 
-            if y > 290.0 {
-                y = 290.0;
-                v_y = 0.0;
+            if player.y > 290.0 {
+                player.y = 290.0;
+                player.vel_y = 0.0;
 
                 on_ground = true;
             }
@@ -99,11 +114,7 @@ fn main() {
         let _ = renderer.set_draw_color(sdl2::pixels::Color::RGB(0, 0, 0));
         let _ = renderer.clear();
 
-        player.x = x as i32;
-        player.y = y as i32;
-
-        let _ = renderer.set_draw_color(sdl2::pixels::Color::RGB(0, 255, 0));
-        let _ = renderer.fill_rect(&player);
+        player.render(&renderer);
 
         renderer.present();
     }

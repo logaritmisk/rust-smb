@@ -6,7 +6,3 @@ authors = ["logaritmisk <anders.e.olsson@gmail.com>"]
 
 [dependencies]
 sdl2 = "0.0.7"
-
-
-[dependencies.sdl2_ttf]
-git = "https://github.com/andelf/rust-sdl2_ttf"

@@ -45,7 +45,7 @@ impl Player {
 fn main() {
     sdl2::init(sdl2::INIT_EVERYTHING);
 
-    let window = match Window::new("SMB", WindowPos::PosCentered, WindowPos::PosCentered, SCREEN_WIDTH, SCREEN_HEIGHT, OPENGL) {
+    let window = match Window::new("Super Matte Bros", WindowPos::PosCentered, WindowPos::PosCentered, SCREEN_WIDTH, SCREEN_HEIGHT, OPENGL) {
         Ok(window) => window,
         Err(err) => panic!("failed to create window: {}", err)
     };
@@ -55,7 +55,7 @@ fn main() {
         Err(err) => panic!("failed to create renderer: {}", err)
     };
 
-    let mut player = Player::new(390.0, 290.0);
+    let mut player = Player::new(390.0, 390.0);
 
     let mut on_ground = true;
 
@@ -104,8 +104,8 @@ fn main() {
         while lag >= MS_PER_UPDATE {
             player.update();
 
-            if player.y > 290.0 {
-                player.y = 290.0;
+            if player.y > 390.0 {
+                player.y = 390.0;
                 player.vel_y = 0.0;
 
                 on_ground = true;

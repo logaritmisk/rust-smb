@@ -31,10 +31,11 @@ fn main() {
         Err(err) => panic!("failed to create renderer: {}", err)
     };
 
-    let mut player = player::Player::new(390.0, 390.0);
+    let mut player = player::Player::new(290.0, 390.0);
     let mut on_ground = true;
 
-    let ground = Rect::new(0, 400, SCREEN_WIDTH as i32, 5);
+    let ground1 = Rect::new(0, 400, 325, 5);
+    let ground2 = Rect::new(475, 400, 325, 5);
 
     let mut current : uint;
     let mut elapsed : uint;
@@ -95,7 +96,8 @@ fn main() {
         let _ = renderer.clear();
 
         let _ = renderer.set_draw_color(Color::RGB(0, 0, 255));
-        let _ = renderer.fill_rect(&ground);
+        let _ = renderer.fill_rect(&ground1);
+        let _ = renderer.fill_rect(&ground2);
 
         player.render(&renderer);
 

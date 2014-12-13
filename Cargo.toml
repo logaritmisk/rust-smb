@@ -1,8 +1,10 @@
 [package]
-name = "smb"
+name = "super-matte-bros"
 version = "0.0.1"
 authors = ["logaritmisk <anders.e.olsson@gmail.com>"]
 
-
 [dependencies]
-sdl2 = "0.0.7"
+sdl2 = "0.0.8"
+
+[[bin]]
+name = "super-matte-bros"

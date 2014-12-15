@@ -18,6 +18,34 @@ const SCREEN_HEIGHT : int = 600;
 const MS_PER_UPDATE : uint = 10;
 
 
+struct Object {
+    position: vec::Vec2,
+    color: Color,
+    w: f32,
+    h: f32,
+}
+
+impl Object {
+    fn new(x: f32, y: f32, w: f32, h: f32, color: Color) -> Object {
+        Object {
+            position: vec::Vec2 { x: x, y: y },
+            color: color,
+            w: w,
+            h: h
+        }
+    }
+
+    fn render(&self, renderer: &sdl2::render::Renderer) {
+        let _ = renderer.set_draw_color(self.color);
+        let _ = renderer.fill_rect(&self.get_rect());
+    }
+
+    fn get_rect(&self) -> Rect {
+        Rect::new((self.position.x - (self.w / 2.0)) as i32, (self.position.y - (self.h / 2.0)) as i32, self.w as i32, self.h as i32)
+    }
+}
+
+
 fn main() {
     sdl2::init(sdl2::INIT_EVERYTHING);
 
@@ -34,8 +62,8 @@ fn main() {
     let mut player = player::Player::new(290.0, 390.0);
     let mut on_ground = true;
 
-    let ground1 = Rect::new(0, 400, 325, 5);
-    let ground2 = Rect::new(475, 400, 325, 5);
+    let ground1 = Object::new(162.5, 400.0, 325.0, 5.0, Color::RGB(0, 0, 255));
+    let ground2 = Object::new(637.5, 395.0, 325.0, 5.0, Color::RGB(0, 0, 255));
 
     let mut current : uint;
     let mut elapsed : uint;
@@ -82,6 +110,8 @@ fn main() {
         while lag >= MS_PER_UPDATE {
             player.update();
 
+            collision_detection(&player.get_rect(), &ground2.get_rect());
+
             if player.position.y >= 390.0 {
                 player.position.y = 390.0;
                 player.velocity.y = 0.0;
@@ -95,9 +125,8 @@ fn main() {
         let _ = renderer.set_draw_color(Color::RGB(0, 0, 0));
         let _ = renderer.clear();
 
-        let _ = renderer.set_draw_color(Color::RGB(0, 0, 255));
-        let _ = renderer.fill_rect(&ground1);
-        let _ = renderer.fill_rect(&ground2);
+        ground1.render(&renderer);
+        ground2.render(&renderer);
 
         player.render(&renderer);
 
@@ -105,4 +134,16 @@ fn main() {
     }
 
     sdl2::quit();
+}
+
+fn collision_detection(lhs: &Rect, rhs: &Rect) -> bool {
+    if lhs.x + lhs.w < rhs.x || rhs.x + rhs.w < lhs.x {
+        false
+    }
+    else if lhs.y + lhs.h < rhs.y || rhs.y + rhs.h < lhs.y {
+        false
+    }
+    else {
+        true
+    }
 }

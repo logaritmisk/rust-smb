@@ -27,9 +27,11 @@ impl Player {
     }
 
     pub fn render(&self, renderer: &Renderer) {
-        let player = Rect::new(self.position.x as i32, self.position.y as i32, 10, 10);
-
         let _ = renderer.set_draw_color(Color::RGB(0, 255, 0));
-        let _ = renderer.fill_rect(&player);
+        let _ = renderer.fill_rect(&self.get_rect());
+    }
+
+    pub fn get_rect(&self) -> Rect {
+        Rect::new(self.position.x as i32 - 5, self.position.y as i32 - 5, 10, 10)
     }
 }

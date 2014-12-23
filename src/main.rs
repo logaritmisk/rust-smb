@@ -3,7 +3,7 @@ extern crate sdl2;
 
 use sdl2::video::{Window, WindowPos, OPENGL};
 use sdl2::event::{poll_event, Event};
-use sdl2::timer::get_ticks;
+use sdl2::timer::{get_ticks, delay};
 use sdl2::rect::Rect;
 use sdl2::keycode::KeyCode;
 use sdl2::pixels::Color;
@@ -149,6 +149,8 @@ fn main() {
         player.render(&renderer);
 
         renderer.present();
+
+        delay(5);
     }
 
     sdl2::quit();

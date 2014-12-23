@@ -12,11 +12,12 @@ pub struct Player {
     pub position: vec::Vec2,
     pub velocity: vec::Vec2,
     pub gravity: f32,
+    pub on_ground: bool
 }
 
 impl Player {
     pub fn new(x: f32, y: f32) -> Player {
-        Player { position: vec::Vec2 { x: x, y: y }, velocity: vec::Vec2 { x: 0.0, y: 0.0 }, gravity: 0.3 }
+        Player { position: vec::Vec2 { x: x, y: y }, velocity: vec::Vec2 { x: 0.0, y: 0.0 }, gravity: 0.3, on_ground: false }
     }
 
     pub fn update(&mut self) {

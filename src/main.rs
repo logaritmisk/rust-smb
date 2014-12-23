@@ -1,5 +1,6 @@
 extern crate sdl2;
 
+
 use sdl2::video::{Window, WindowPos, OPENGL};
 use sdl2::event::{poll_event, Event};
 use sdl2::timer::get_ticks;
@@ -59,11 +60,12 @@ fn main() {
         Err(err) => panic!("failed to create renderer: {}", err)
     };
 
-    let mut player = player::Player::new(290.0, 390.0);
-    let mut on_ground = true;
+    let mut objects = Vec::new();
 
-    let ground1 = Object::new(162.5, 400.0, 325.0, 5.0, Color::RGB(0, 0, 255));
-    let ground2 = Object::new(637.5, 395.0, 325.0, 5.0, Color::RGB(0, 0, 255));
+    objects.push(Object::new(162.5, 400.0, 325.0, 5.0, Color::RGB(0, 0, 255)));
+    objects.push(Object::new(637.5, 380.0, 325.0, 5.0, Color::RGB(0, 0, 255)));
+
+    let mut player = player::Player::new(290.0, 390.0);
 
     let mut current : uint;
     let mut elapsed : uint;
@@ -86,10 +88,9 @@ fn main() {
                 } else if key == KeyCode::Left {
                     player.velocity.x = -4.0;
                 } else if key == KeyCode::Up {
-                    if on_ground {
+                    if player.on_ground {
                         player.velocity.y = -8.0;
-
-                        on_ground = false;
+                        player.on_ground = false;
                     }
                 }
             },
@@ -110,13 +111,29 @@ fn main() {
         while lag >= MS_PER_UPDATE {
             player.update();
 
-            collision_detection(&player.get_rect(), &ground2.get_rect());
+            player.on_ground = false;
 
-            if player.position.y >= 390.0 {
-                player.position.y = 390.0;
-                player.velocity.y = 0.0;
+            for object in objects.iter() {
+                let mut i : uint = 0;
 
-                on_ground = true;
+                loop {
+                    if !collision_detection(&object.get_rect(), &player.get_rect()) {
+                        if i > 0 {
+                            player.velocity.y = 0.0;
+                            player.on_ground = true;
+                        }
+
+                        break;
+                    }
+
+                    i += 1;
+
+                    if i > 100 {
+                        break;
+                    }
+
+                    player.position.y -= player.velocity.y * 0.05;
+                }
             }
 
             lag -= MS_PER_UPDATE;
@@ -125,8 +142,9 @@ fn main() {
         let _ = renderer.set_draw_color(Color::RGB(0, 0, 0));
         let _ = renderer.clear();
 
-        ground1.render(&renderer);
-        ground2.render(&renderer);
+        for object in objects.iter() {
+            object.render(&renderer);
+        }
 
         player.render(&renderer);
 

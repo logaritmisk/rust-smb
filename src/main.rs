@@ -1,5 +1,6 @@
 extern crate sdl2;
 
+use std::cmp::{max, min};
 
 use sdl2::video::{Window, WindowPos, OPENGL};
 use sdl2::event::{poll_event, Event};
@@ -114,25 +115,30 @@ fn main() {
             player.on_ground = false;
 
             for object in objects.iter() {
-                let mut i : uint = 0;
+                if collision_detection(&object.get_rect(), &player.get_rect()) {
+                    let intersect = collision_intersect(&object.get_rect(), &player.get_rect());
 
-                loop {
-                    if !collision_detection(&object.get_rect(), &player.get_rect()) {
-                        if i > 0 {
-                            player.velocity.y = 0.0;
-                            player.on_ground = true;
+                    if intersect.w >= intersect.h {
+                        let mut delta = intersect.h as f32;
+
+                        if player.velocity.y >= 0.0 {
+                            delta *= -1.0;
                         }
 
-                        break;
+                        player.position.y += delta;
+                        player.velocity.y = 0.0;
+
+                        player.on_ground = true;
+                    } else {
+                        let mut delta = intersect.w as f32;
+
+                        if player.velocity.x >= 0.0 {
+                            delta *= -1.0;
+                        }
+
+                        player.position.x += delta;
+                        player.velocity.x = 0.0;
                     }
-
-                    i += 1;
-
-                    if i > 100 {
-                        break;
-                    }
-
-                    player.position.y -= player.velocity.y * 0.05;
                 }
             }
 
@@ -157,13 +163,20 @@ fn main() {
 }
 
 fn collision_detection(lhs: &Rect, rhs: &Rect) -> bool {
-    if lhs.x + lhs.w < rhs.x || rhs.x + rhs.w < lhs.x {
+    if lhs.x + lhs.w <= rhs.x || rhs.x + rhs.w <= lhs.x {
         false
     }
-    else if lhs.y + lhs.h < rhs.y || rhs.y + rhs.h < lhs.y {
+    else if lhs.y + lhs.h <= rhs.y || rhs.y + rhs.h <= lhs.y {
         false
     }
     else {
         true
     }
+}
+
+fn collision_intersect(lhs: &Rect, rhs: &Rect) -> Rect {
+    let x = max(lhs.x, rhs.x);
+    let y = max(lhs.y, rhs.y);
+
+    Rect::new(x, y, min(lhs.x + lhs.w, rhs.x + rhs.w) - x, min(lhs.y + lhs.h, rhs.y + rhs.h) - y)
 }

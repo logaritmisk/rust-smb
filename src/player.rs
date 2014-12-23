@@ -23,6 +23,12 @@ impl Player {
     pub fn update(&mut self) {
         self.velocity.y += self.gravity;
 
+        if self.velocity.y > 8.0 {
+            self.velocity.y = 8.0;
+        } else if self.velocity.y < -8.0 {
+            self.velocity.y = -8.0;
+        }
+
         self.position.x += self.velocity.x;
         self.position.y += self.velocity.y;
     }

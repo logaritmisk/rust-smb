@@ -5,19 +5,26 @@ use sdl2::render::Renderer;
 use sdl2::pixels::Color;
 use sdl2::rect::Rect;
 
+use vec::Vec2;
+
 use vec;
 
 
 pub struct Player {
-    pub position: vec::Vec2,
-    pub velocity: vec::Vec2,
+    pub position: Vec2<f32>,
+    pub velocity: Vec2<f32>,
     pub gravity: f32,
     pub on_ground: bool
 }
 
 impl Player {
     pub fn new(x: f32, y: f32) -> Player {
-        Player { position: vec::Vec2 { x: x, y: y }, velocity: vec::Vec2 { x: 0.0, y: 0.0 }, gravity: 0.3, on_ground: false }
+        Player {
+            position: Vec2 { x: x, y: y },
+            velocity: Vec2 { x: 0.0, y: 0.0 },
+            gravity: 0.3,
+            on_ground: false
+        }
     }
 
     pub fn update(&mut self) {
@@ -39,6 +46,6 @@ impl Player {
     }
 
     pub fn get_rect(&self) -> Rect {
-        Rect::new(self.position.x as i32 - 5, self.position.y as i32 - 5, 10, 10)
+        Rect::new(self.position.x as i32 - 16, self.position.y as i32 - 16, 32, 32)
     }
 }

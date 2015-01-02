@@ -2,11 +2,11 @@
 name = "super-matte-bros"
 version = "0.0.1"
 dependencies = [
- "sdl2 0.0.12 (registry+https://github.com/rust-lang/crates.io-index)",
+ "sdl2 0.0.13 (git+https://github.com/AngryLawyer/rust-sdl2)",
 ]
 
 [[package]]
 name = "sdl2"
-version = "0.0.12"
-source = "registry+https://github.com/rust-lang/crates.io-index"
+version = "0.0.13"
+source = "git+https://github.com/AngryLawyer/rust-sdl2#1e9a96755780b757ed8833c16b17396b33e5eb15"
 

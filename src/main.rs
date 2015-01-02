@@ -1,5 +1,7 @@
 extern crate sdl2;
 
+
+use std::num::SignedInt;
 use std::cmp::{max, min};
 
 use sdl2::video::{Window, WindowPos, OPENGL};
@@ -9,41 +11,47 @@ use sdl2::rect::Rect;
 use sdl2::keycode::KeyCode;
 use sdl2::pixels::Color;
 
+use vec::Vec2;
+use tile::Layer;
+use player::Player;
+
 
 mod vec;
+mod tile;
 mod player;
 
 
-const SCREEN_WIDTH : int = 800;
-const SCREEN_HEIGHT : int = 600;
+const SCREEN_WIDTH : i32 = 960;
+const SCREEN_HEIGHT : i32 = 640;
+
+const TILE_WIDTH : i32 = 32;
+const TILE_HEIGHT : i32 = 32;
 
 const MS_PER_UPDATE : uint = 10;
 
 
-struct Object {
-    position: vec::Vec2,
-    color: Color,
-    w: f32,
-    h: f32,
+#[deriving(Clone)]
+enum Tile {
+    Empty,
+    Floor
 }
 
-impl Object {
-    fn new(x: f32, y: f32, w: f32, h: f32, color: Color) -> Object {
-        Object {
-            position: vec::Vec2 { x: x, y: y },
-            color: color,
-            w: w,
-            h: h
+
+struct Camera {
+    x: i32,
+    y: i32,
+    width: i32,
+    height: i32
+}
+
+impl Camera {
+    fn new(x: i32, y: i32, width: i32, height: i32) -> Camera {
+        Camera {
+            x: x,
+            y: y,
+            width: width,
+            height: height
         }
-    }
-
-    fn render(&self, renderer: &sdl2::render::Renderer) {
-        let _ = renderer.set_draw_color(self.color);
-        let _ = renderer.fill_rect(&self.get_rect());
-    }
-
-    fn get_rect(&self) -> Rect {
-        Rect::new((self.position.x - (self.w / 2.0)) as i32, (self.position.y - (self.h / 2.0)) as i32, self.w as i32, self.h as i32)
     }
 }
 
@@ -51,7 +59,7 @@ impl Object {
 fn main() {
     sdl2::init(sdl2::INIT_EVERYTHING);
 
-    let window = match Window::new("Super Matte Bros", WindowPos::PosCentered, WindowPos::PosCentered, SCREEN_WIDTH, SCREEN_HEIGHT, OPENGL) {
+    let window = match Window::new("Super Matte Bros", WindowPos::PosCentered, WindowPos::PosCentered, SCREEN_WIDTH as int, SCREEN_HEIGHT as int, OPENGL) {
         Ok(window) => window,
         Err(err) => panic!("failed to create window: {}", err)
     };
@@ -61,12 +69,18 @@ fn main() {
         Err(err) => panic!("failed to create renderer: {}", err)
     };
 
-    let mut objects = Vec::new();
+    let mut camera = Camera::new(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+    let mut layer = Layer::new(30, 20, Tile::Empty);
 
-    objects.push(Object::new(162.5, 400.0, 325.0, 5.0, Color::RGB(0, 0, 255)));
-    objects.push(Object::new(637.5, 380.0, 325.0, 5.0, Color::RGB(0, 0, 255)));
+    for x in range(0, 14) {
+        layer.set_tile(x, 14, Tile::Floor);
+    }
 
-    let mut player = player::Player::new(290.0, 390.0);
+    for x in range(17, 30) {
+        layer.set_tile(x, 13, Tile::Floor);
+    }
+
+    let mut player = Player::new(290.0, 390.0);
 
     let mut current : uint;
     let mut elapsed : uint;
@@ -114,30 +128,39 @@ fn main() {
 
             player.on_ground = false;
 
-            for object in objects.iter() {
-                if collision_detection(&object.get_rect(), &player.get_rect()) {
-                    let intersect = collision_intersect(&object.get_rect(), &player.get_rect());
+            for y in range(0, 20) {
+                for x in range(0, 30) {
+                    match *layer.get_tile(x, y) {
+                        Tile::Empty => (),
+                        Tile::Floor => {
+                            let object = Rect::new(x * TILE_WIDTH, y * TILE_HEIGHT, TILE_WIDTH, TILE_HEIGHT);
 
-                    if intersect.w >= intersect.h {
-                        let mut delta = intersect.h as f32;
+                            if collision_detection(&object, &player.get_rect()) {
+                                let intersect = collision_intersect(&object, &player.get_rect());
 
-                        if player.velocity.y >= 0.0 {
-                            delta *= -1.0;
+                                if intersect.w >= intersect.h {
+                                    let mut delta = intersect.h as f32;
+
+                                    if player.velocity.y >= 0.0 {
+                                        delta *= -1.0;
+                                    }
+
+                                    player.position.y += delta;
+                                    player.velocity.y = 0.0;
+
+                                    player.on_ground = true;
+                                } else {
+                                    let mut delta = intersect.w as f32;
+
+                                    if player.velocity.x >= 0.0 {
+                                        delta *= -1.0;
+                                    }
+
+                                    player.position.x += delta;
+                                    player.velocity.x = 0.0;
+                                }
+                            }
                         }
-
-                        player.position.y += delta;
-                        player.velocity.y = 0.0;
-
-                        player.on_ground = true;
-                    } else {
-                        let mut delta = intersect.w as f32;
-
-                        if player.velocity.x >= 0.0 {
-                            delta *= -1.0;
-                        }
-
-                        player.position.x += delta;
-                        player.velocity.x = 0.0;
                     }
                 }
             }
@@ -148,8 +171,16 @@ fn main() {
         let _ = renderer.set_draw_color(Color::RGB(0, 0, 0));
         let _ = renderer.clear();
 
-        for object in objects.iter() {
-            object.render(&renderer);
+        for y in range(0, 20) {
+            for x in range(0, 30) {
+                match *layer.get_tile(x, y) {
+                    Tile::Empty => (),
+                    Tile::Floor => {
+                        let _ = renderer.set_draw_color(Color::RGB(0, 0, 255));
+                        let _ = renderer.fill_rect(&Rect::new(x * TILE_WIDTH, y * TILE_HEIGHT, TILE_WIDTH, TILE_HEIGHT));
+                    }
+                }
+            }
         }
 
         player.render(&renderer);

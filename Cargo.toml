@@ -3,8 +3,8 @@ name = "super-matte-bros"
 version = "0.0.1"
 authors = ["logaritmisk <anders.e.olsson@gmail.com>"]
 
-[dependencies]
-sdl2 = "0.0.12"
+[dependencies.sdl2]
+git = "https://github.com/AngryLawyer/rust-sdl2"
 
 [[bin]]
 name = "super-matte-bros"

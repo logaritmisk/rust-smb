@@ -1,13 +1,8 @@
-extern crate sdl2;
-
-
 use sdl2::render::Renderer;
 use sdl2::pixels::Color;
 use sdl2::rect::Rect;
 
 use vec::Vec2;
-
-use vec;
 
 
 pub struct Player {

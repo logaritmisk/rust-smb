@@ -70,7 +70,7 @@ fn main() {
     };
 
     let mut camera = Camera::new(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
-    let mut layer = Layer::new(30, 20, Tile::Empty);
+    let mut layer = Layer::new(30, 20, TILE_WIDTH, TILE_HEIGHT, Tile::Empty);
 
     for x in range(0, 14) {
         layer.set_tile(x, 14, Tile::Floor);
@@ -104,7 +104,7 @@ fn main() {
                     player.velocity.x = -4.0;
                 } else if key == KeyCode::Up {
                     if player.on_ground {
-                        player.velocity.y = -8.0;
+                        player.velocity.y = -12.0;
                         player.on_ground = false;
                     }
                 }
@@ -115,8 +115,8 @@ fn main() {
                 } else if key == KeyCode::Left {
                     player.velocity.x = 0.0;
                 } else if key == KeyCode::Up {
-                    if player.velocity.y < -4.0 {
-                        player.velocity.y = -4.0;
+                    if player.velocity.y < -6.0 {
+                        player.velocity.y = -6.0;
                     }
                 }
             },
@@ -128,36 +128,51 @@ fn main() {
 
             player.on_ground = false;
 
-            for y in range(0, 20) {
-                for x in range(0, 30) {
-                    match *layer.get_tile(x, y) {
-                        Tile::Empty => (),
-                        Tile::Floor => {
-                            let object = Rect::new(x * TILE_WIDTH, y * TILE_HEIGHT, TILE_WIDTH, TILE_HEIGHT);
+            let tiles_intersect = layer.get_intersecting(&player.get_rect());
 
-                            if collision_detection(&object, &player.get_rect()) {
-                                let intersect = collision_intersect(&object, &player.get_rect());
+            let mut skip = false;
 
-                                if intersect.w >= intersect.h {
-                                    let mut delta = intersect.h as f32;
+            if tiles_intersect.x < 0 || tiles_intersect.x + tiles_intersect.w > 30 - 1 {
+                skip = true;
+            }
+            else if tiles_intersect.y < 0 || tiles_intersect.y + tiles_intersect.h > 20 - 1 {
+                skip = true;
+            }
 
-                                    if player.velocity.y >= 0.0 {
-                                        delta *= -1.0;
+            if skip == false {
+                for y in range(tiles_intersect.y, tiles_intersect.y + tiles_intersect.h + 1) {
+                    for x in range(tiles_intersect.x, tiles_intersect.x + tiles_intersect.w + 1) {
+                        let player_rect = player.get_rect();
+
+                        match *layer.get_tile(x, y) {
+                            Tile::Empty => (),
+                            Tile::Floor => {
+                                let object_rect = Rect::new(x * TILE_WIDTH, y * TILE_HEIGHT, TILE_WIDTH, TILE_HEIGHT);
+
+                                if collision_detection(&object_rect, &player_rect) {
+                                    let intersect = collision_intersect(&object_rect, &player_rect);
+
+                                    if intersect.w >= intersect.h {
+                                        let mut delta = intersect.h as f32;
+
+                                        if player.velocity.y >= 0.0 {
+                                            delta *= -1.0;
+                                        }
+
+                                        player.position.y += delta;
+                                        player.velocity.y = 0.0;
+
+                                        player.on_ground = true;
+                                    } else {
+                                        let mut delta = intersect.w as f32;
+
+                                        if player.velocity.x >= 0.0 {
+                                            delta *= -1.0;
+                                        }
+
+                                        player.position.x += delta;
+                                        player.velocity.x = 0.0;
                                     }
-
-                                    player.position.y += delta;
-                                    player.velocity.y = 0.0;
-
-                                    player.on_ground = true;
-                                } else {
-                                    let mut delta = intersect.w as f32;
-
-                                    if player.velocity.x >= 0.0 {
-                                        delta *= -1.0;
-                                    }
-
-                                    player.position.x += delta;
-                                    player.velocity.x = 0.0;
                                 }
                             }
                         }

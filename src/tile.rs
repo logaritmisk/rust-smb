@@ -35,7 +35,7 @@ impl<T> Layer<T> where T: Clone {
         self.tiles[offset] = tile;
     }
 
-    pub fn get_intersecting(&self, rect: &Rect) -> Rect {
+    pub fn find_intersecting(&self, rect: &Rect) -> Rect {
         let x1 = max(rect.x / self.tile_width, 0);
         let y1 = max(rect.y / self.tile_height, 0);
         let x2 = min((rect.x + rect.w - 1) / self.tile_width, self.width - 1);
@@ -45,7 +45,7 @@ impl<T> Layer<T> where T: Clone {
     }
 
     pub fn for_each_intersecting<F>(&self, rect: &Rect, mut f: F) where F: FnMut(&T, &Rect) {
-        let intersect = self.get_intersecting(rect);
+        let intersect = self.find_intersecting(rect);
 
         if intersect.x < 0 || intersect.x + intersect.w > self.width {
             return;

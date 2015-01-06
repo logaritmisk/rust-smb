@@ -1,6 +1,8 @@
 extern crate sdl2;
 
 
+use std::num::FloatMath;
+
 use sdl2::video::{Window, WindowPos, OPENGL};
 use sdl2::event::{poll_event, Event};
 use sdl2::timer::{get_ticks, delay};
@@ -9,14 +11,13 @@ use sdl2::keycode::KeyCode;
 use sdl2::pixels::Color;
 
 use tile::Layer;
-use player::Player;
 use camera::Camera;
+use player::Player;
 
 
-mod vec;
 mod tile;
-mod player;
 mod camera;
+mod player;
 
 
 const SCREEN_WIDTH : i32 = 960;
@@ -77,12 +78,12 @@ fn main() {
                 if key == KeyCode::Escape {
                     break;
                 } else if key == KeyCode::Right {
-                    player.velocity.x = 4.0;
+                    player.dx = 4.0;
                 } else if key == KeyCode::Left {
-                    player.velocity.x = -4.0;
+                    player.dx = -4.0;
                 } else if key == KeyCode::Up {
                     if player.on_ground && repeat == false {
-                        player.velocity.y = -12.0;
+                        player.dy = -12.0;
 
                         player.on_ground = false;
                     }
@@ -90,16 +91,16 @@ fn main() {
             },
             Event::KeyUp(_, _, key, _, _, _) => {
                 if key == KeyCode::Right {
-                    if player.velocity.x > 0.0 {
-                        player.velocity.x = 0.0;
+                    if player.dx > 0.0 {
+                        player.dx = 0.0;
                     }
                 } else if key == KeyCode::Left {
-                    if player.velocity.x < 0.0 {
-                        player.velocity.x = 0.0;
+                    if player.dx < 0.0 {
+                        player.dx = 0.0;
                     }
                 } else if key == KeyCode::Up {
-                    if player.velocity.y < -6.0 {
-                        player.velocity.y = -6.0;
+                    if player.dy < -6.0 {
+                        player.dy = -6.0;
                     }
                 }
             },
@@ -109,57 +110,101 @@ fn main() {
         while lag >= MS_PER_UPDATE {
             player.update();
 
-            layer.for_each_intersecting(&player.to_rect(), |tile: &Tile, position: &Rect| {
-                match *tile {
-                    Tile::Empty => (),
-                    Tile::Floor(_) => {
-                        if position.has_intersection(&player.to_rect()) {
-                            match position.intersection(&player.to_rect()) {
-                                Some(intersect) => {
-                                    if intersect.w >= intersect.h {
-                                        if player.velocity.y < 0.0 {
-                                            player.position.y += intersect.h as f32;
-                                        } else {
-                                            player.position.y -= intersect.h as f32;
-                                        }
+            let intersecting = layer.find_intersecting(&player.to_rect());
 
-                                        player.velocity.y = 0.0;
+            if player.dx > 0.0 {
+                let p_x = player.x + player.w as f32;
+                let t_x = intersecting.x + intersecting.w;
 
-                                        player.on_ground = true;
-                                    } else {
-                                        if player.velocity.x < 0.0 {
-                                            player.position.x += intersect.w as f32;
-                                        } else {
-                                            player.position.x -= intersect.w as f32;
-                                        }
+                let mut d_x = player.dx;
 
-                                        player.velocity.x = 0.0;
-                                    }
-                                },
-                                None => (),
+                for y in range(intersecting.y, intersecting.y + intersecting.h + 1) {
+                    for x in range(t_x, t_x + 2) {
+                        match *layer.get_tile(x, y) {
+                            Tile::Empty => (),
+                            Tile::Floor(_) => {
+                                d_x = d_x.min((x * TILE_WIDTH) as f32 - p_x);
                             }
                         }
                     }
                 }
-            });
 
-            player.on_ground = false;
+                if d_x > 0.0 {
+                    player.x += d_x;
+                } else {
+                    player.dx = 0.0;
+                }
+            } else if player.dx < 0.0 {
+                let p_x = player.x;
+                let t_x = intersecting.x;
 
-            let mut ground = player.to_rect();
+                let mut d_x = player.dx;
 
-            ground.y += ground.h;
-            ground.h = 1;
-
-            layer.for_each_intersecting(&ground, |tile: &Tile, position: &Rect| {
-                match *tile {
-                    Tile::Empty => (),
-                    Tile::Floor(_) => {
-                        if position.has_intersection(&ground) {
-                            player.on_ground = true;
+                for y in range(intersecting.y, intersecting.y + intersecting.h + 1) {
+                    for x in range(t_x, t_x + 2) {
+                        match *layer.get_tile(x, y) {
+                            Tile::Empty => (),
+                            Tile::Floor(_) => {
+                                d_x = d_x.min((x * TILE_WIDTH) as f32 - p_x);
+                            }
                         }
                     }
                 }
-            });
+
+                if d_x < 0.0 {
+                    player.x += d_x;
+                } else {
+                    player.dx = 0.0;
+                }
+            }
+
+            if player.dy > 0.0 {
+                let p_y = player.y + player.h as f32;
+                let t_y = intersecting.y + intersecting.h;
+
+                let mut d_y = player.dy;
+
+                for y in range(t_y, t_y + 2) {
+                    for x in range(intersecting.x, intersecting.x + intersecting.w + 1) {
+                        match *layer.get_tile(x, y) {
+                            Tile::Empty => (),
+                            Tile::Floor(_) => {
+                                d_y = d_y.min((y * TILE_HEIGHT) as f32 - p_y);
+                            }
+                        }
+                    }
+                }
+
+                if d_y > 0.0 {
+                    player.y += d_y;
+                } else {
+                    player.dy = 0.0;
+
+                    player.on_ground = true;
+                }
+            } else if player.dy < 0.0 {
+                let p_y = player.y;
+                let t_y = intersecting.y;
+
+                let mut d_y = player.dy;
+
+                for y in range(t_y, t_y + 2) {
+                    for x in range(intersecting.x, intersecting.x + intersecting.w + 1) {
+                        match *layer.get_tile(x, y) {
+                            Tile::Empty => (),
+                            Tile::Floor(_) => {
+                                d_y = d_y.min((y * TILE_HEIGHT) as f32 - p_y);
+                            }
+                        }
+                    }
+                }
+
+                if d_y < 0.0 {
+                    player.y += d_y;
+                } else {
+                    player.dy = 0.0;
+                }
+            }
 
             camera.center(&player.to_rect());
 

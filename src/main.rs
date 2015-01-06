@@ -113,9 +113,9 @@ fn main() {
                 }
             },
             Event::KeyUp(_, _, key, _, _, _) => {
-                if key == KeyCode::Right {
+                if key == KeyCode::Right && player.velocity.x > 0.0 {
                     player.velocity.x = 0.0;
-                } else if key == KeyCode::Left {
+                } else if key == KeyCode::Left && player.velocity.x < 0.0 {
                     player.velocity.x = 0.0;
                 } else if key == KeyCode::Up {
                     if player.velocity.y < -6.0 {

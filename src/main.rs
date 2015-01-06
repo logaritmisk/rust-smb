@@ -1,7 +1,6 @@
 extern crate sdl2;
 
 
-use std::num::SignedInt;
 use std::cmp::{max, min};
 
 use sdl2::video::{Window, WindowPos, OPENGL};
@@ -11,7 +10,6 @@ use sdl2::rect::Rect;
 use sdl2::keycode::KeyCode;
 use sdl2::pixels::Color;
 
-use vec::Vec2;
 use tile::Layer;
 use player::Player;
 
@@ -30,7 +28,7 @@ const TILE_HEIGHT : i32 = 32;
 const MS_PER_UPDATE : uint = 10;
 
 
-#[deriving(Clone)]
+#[derive(Clone, Show)]
 enum Tile {
     Empty,
     Floor
@@ -53,6 +51,10 @@ impl Camera {
             height: height
         }
     }
+
+    fn get_rect(&self) -> Rect {
+        Rect::new(self.x, self.y, self.width, self.height)
+    }
 }
 
 
@@ -69,7 +71,7 @@ fn main() {
         Err(err) => panic!("failed to create renderer: {}", err)
     };
 
-    let mut camera = Camera::new(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+    let camera = Camera::new(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
     let mut layer = Layer::new(30, 20, TILE_WIDTH, TILE_HEIGHT, Tile::Empty);
 
     for x in range(0, 14) {
@@ -105,6 +107,7 @@ fn main() {
                 } else if key == KeyCode::Up {
                     if player.on_ground {
                         player.velocity.y = -12.0;
+
                         player.on_ground = false;
                     }
                 }
@@ -126,59 +129,58 @@ fn main() {
         while lag >= MS_PER_UPDATE {
             player.update();
 
-            player.on_ground = false;
+            layer.for_each_intersecting(&player.get_rect(), |tile: &Tile, x: i32, y: i32| {
+                match *tile {
+                    Tile::Empty => (),
+                    Tile::Floor => {
+                        let object = Rect::new(x, y, TILE_WIDTH, TILE_HEIGHT);
 
-            let tiles_intersect = layer.get_intersecting(&player.get_rect());
+                        if collision_detection(&object, &player.get_rect()) {
+                            let intersect = collision_intersect(&object, &player.get_rect());
 
-            let mut skip = false;
-
-            if tiles_intersect.x < 0 || tiles_intersect.x + tiles_intersect.w > 30 - 1 {
-                skip = true;
-            }
-            else if tiles_intersect.y < 0 || tiles_intersect.y + tiles_intersect.h > 20 - 1 {
-                skip = true;
-            }
-
-            if skip == false {
-                for y in range(tiles_intersect.y, tiles_intersect.y + tiles_intersect.h + 1) {
-                    for x in range(tiles_intersect.x, tiles_intersect.x + tiles_intersect.w + 1) {
-                        let player_rect = player.get_rect();
-
-                        match *layer.get_tile(x, y) {
-                            Tile::Empty => (),
-                            Tile::Floor => {
-                                let object_rect = Rect::new(x * TILE_WIDTH, y * TILE_HEIGHT, TILE_WIDTH, TILE_HEIGHT);
-
-                                if collision_detection(&object_rect, &player_rect) {
-                                    let intersect = collision_intersect(&object_rect, &player_rect);
-
-                                    if intersect.w >= intersect.h {
-                                        let mut delta = intersect.h as f32;
-
-                                        if player.velocity.y >= 0.0 {
-                                            delta *= -1.0;
-                                        }
-
-                                        player.position.y += delta;
-                                        player.velocity.y = 0.0;
-
-                                        player.on_ground = true;
-                                    } else {
-                                        let mut delta = intersect.w as f32;
-
-                                        if player.velocity.x >= 0.0 {
-                                            delta *= -1.0;
-                                        }
-
-                                        player.position.x += delta;
-                                        player.velocity.x = 0.0;
-                                    }
+                            if intersect.w >= intersect.h {
+                                if player.velocity.y < 0.0 {
+                                    player.position.y += intersect.h as f32;
+                                } else {
+                                    player.position.y -= intersect.h as f32;
                                 }
+
+                                player.velocity.y = 0.0;
+
+                                player.on_ground = true;
+                            } else {
+                                if player.velocity.x < 0.0 {
+                                    player.position.x += intersect.w as f32;
+                                } else {
+                                    player.position.x -= intersect.w as f32;
+                                }
+
+                                player.velocity.x = 0.0;
                             }
                         }
                     }
                 }
-            }
+            });
+
+            player.on_ground = false;
+
+            let mut ground = player.get_rect();
+
+            ground.y += ground.h;
+            ground.h = 1;
+
+            layer.for_each_intersecting(&ground, |tile: &Tile, x: i32, y: i32| {
+                match *tile {
+                    Tile::Empty => (),
+                    Tile::Floor => {
+                        let object = Rect::new(x, y, TILE_WIDTH, TILE_HEIGHT);
+
+                        if collision_detection(&object, &ground) {
+                            player.on_ground = true;
+                        }
+                    }
+                }
+            });
 
             lag -= MS_PER_UPDATE;
         }
@@ -186,17 +188,15 @@ fn main() {
         let _ = renderer.set_draw_color(Color::RGB(0, 0, 0));
         let _ = renderer.clear();
 
-        for y in range(0, 20) {
-            for x in range(0, 30) {
-                match *layer.get_tile(x, y) {
-                    Tile::Empty => (),
-                    Tile::Floor => {
-                        let _ = renderer.set_draw_color(Color::RGB(0, 0, 255));
-                        let _ = renderer.fill_rect(&Rect::new(x * TILE_WIDTH, y * TILE_HEIGHT, TILE_WIDTH, TILE_HEIGHT));
-                    }
+        layer.for_each_intersecting(&camera.get_rect(), |tile: &Tile, x: i32, y: i32| {
+            match *tile {
+                Tile::Empty => (),
+                Tile::Floor => {
+                    let _ = renderer.set_draw_color(Color::RGB(0, 0, 255));
+                    let _ = renderer.fill_rect(&Rect::new(x, y, TILE_WIDTH, TILE_HEIGHT));
                 }
             }
-        }
+        });
 
         player.render(&renderer);
 

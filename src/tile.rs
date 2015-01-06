@@ -62,4 +62,8 @@ impl<T> Layer<T> where T: Clone {
             }
         }
     }
+
+    pub fn to_rect(&self) -> Rect {
+        Rect::new(0, 0, self.width * self.tile_width, self.height * self.tile_height)
+    }
 }

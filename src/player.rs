@@ -35,12 +35,7 @@ impl Player {
         self.position.y += self.velocity.y;
     }
 
-    pub fn render(&self, renderer: &Renderer) {
-        let _ = renderer.set_draw_color(Color::RGB(0, 255, 0));
-        let _ = renderer.fill_rect(&self.get_rect());
-    }
-
-    pub fn get_rect(&self) -> Rect {
+    pub fn to_rect(&self) -> Rect {
         Rect::new(self.position.x as i32 - 16, self.position.y as i32 - 16, 32, 32)
     }
 }

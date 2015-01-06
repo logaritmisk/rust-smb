@@ -48,16 +48,15 @@ fn main() {
         Err(err) => panic!("failed to create renderer: {}", err)
     };
 
-    let mut camera = Camera::new(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
     let mut layer = Layer::new(120, 20, TILE_WIDTH, TILE_HEIGHT, Tile::Empty);
-
-    camera.x = 16;
 
     let colors = vec![Color::RGB(0, 0, 255), Color::RGB(0, 128, 255)];
 
     for x in range(0, 120) {
         layer.set_tile(x, 14, Tile::Floor(colors[(x % 2) as uint]));
     }
+
+    let mut camera = Camera::new(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, layer.to_rect());
 
     let mut player = Player::new(290.0, 390.0);
 
@@ -110,12 +109,12 @@ fn main() {
         while lag >= MS_PER_UPDATE {
             player.update();
 
-            layer.for_each_intersecting(&player.get_rect(), |tile: &Tile, position: &Rect| {
+            layer.for_each_intersecting(&player.to_rect(), |tile: &Tile, position: &Rect| {
                 match *tile {
                     Tile::Empty => (),
                     Tile::Floor(_) => {
-                        if position.has_intersection(&player.get_rect()) {
-                            match position.intersection(&player.get_rect()) {
+                        if position.has_intersection(&player.to_rect()) {
+                            match position.intersection(&player.to_rect()) {
                                 Some(intersect) => {
                                     if intersect.w >= intersect.h {
                                         if player.velocity.y < 0.0 {
@@ -146,7 +145,7 @@ fn main() {
 
             player.on_ground = false;
 
-            let mut ground = player.get_rect();
+            let mut ground = player.to_rect();
 
             ground.y += ground.h;
             ground.h = 1;
@@ -162,23 +161,30 @@ fn main() {
                 }
             });
 
+            camera.center(&player.to_rect());
+
             lag -= MS_PER_UPDATE;
         }
 
         let _ = renderer.set_draw_color(Color::RGB(0, 0, 0));
         let _ = renderer.clear();
 
-        layer.for_each_intersecting(&camera.get_rect(), |tile: &Tile, position: &Rect| {
+        layer.for_each_intersecting(&camera.to_rect(), |tile: &Tile, position: &Rect| {
+            let object = camera_relative_rect(&camera.to_rect(), position);
+
             match *tile {
                 Tile::Empty => (),
-                Tile::Floor(c) => {
-                    let _ = renderer.set_draw_color(c);
-                    let _ = renderer.fill_rect(position);
+                Tile::Floor(color) => {
+                    let _ = renderer.set_draw_color(color);
+                    let _ = renderer.fill_rect(&object);
                 }
             }
         });
 
-        player.render(&renderer);
+        let player_rect = camera_relative_rect(&camera.to_rect(), &player.to_rect());
+
+        let _ = renderer.set_draw_color(Color::RGB(0, 255, 0));
+        let _ = renderer.fill_rect(&player_rect);
 
         renderer.present();
 
@@ -186,4 +192,8 @@ fn main() {
     }
 
     sdl2::quit();
+}
+
+fn camera_relative_rect(camera: &Rect, other: &Rect) -> Rect {
+    Rect::new(other.x - camera.x, other.y - camera.y, other.w, other.h)
 }

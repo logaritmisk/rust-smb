@@ -28,10 +28,10 @@ const TILE_HEIGHT : i32 = 32;
 const MS_PER_UPDATE : uint = 10;
 
 
-#[derive(Clone, Show)]
+#[derive(Clone)]
 enum Tile {
     Empty,
-    Floor
+    Floor(Color)
 }
 
 
@@ -71,15 +71,15 @@ fn main() {
         Err(err) => panic!("failed to create renderer: {}", err)
     };
 
-    let camera = Camera::new(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
-    let mut layer = Layer::new(30, 20, TILE_WIDTH, TILE_HEIGHT, Tile::Empty);
+    let mut camera = Camera::new(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+    let mut layer = Layer::new(120, 20, TILE_WIDTH, TILE_HEIGHT, Tile::Empty);
 
-    for x in range(0, 14) {
-        layer.set_tile(x, 14, Tile::Floor);
-    }
+    camera.x = 16;
 
-    for x in range(17, 30) {
-        layer.set_tile(x, 13, Tile::Floor);
+    let colors = vec![Color::RGB(0, 0, 255), Color::RGB(0, 128, 255)];
+
+    for x in range(0, 120) {
+        layer.set_tile(x, 14, Tile::Floor(colors[(x % 2) as uint]));
     }
 
     let mut player = Player::new(290.0, 390.0);
@@ -97,7 +97,7 @@ fn main() {
 
         match poll_event() {
             Event::Quit(_) => break,
-            Event::KeyDown(_, _, key, _, _, _) => {
+            Event::KeyDown(_, _, key, _, _, repeat) => {
                 if key == KeyCode::Escape {
                     break;
                 } else if key == KeyCode::Right {
@@ -105,7 +105,7 @@ fn main() {
                 } else if key == KeyCode::Left {
                     player.velocity.x = -4.0;
                 } else if key == KeyCode::Up {
-                    if player.on_ground {
+                    if player.on_ground && repeat == false {
                         player.velocity.y = -12.0;
 
                         player.on_ground = false;
@@ -113,10 +113,14 @@ fn main() {
                 }
             },
             Event::KeyUp(_, _, key, _, _, _) => {
-                if key == KeyCode::Right && player.velocity.x > 0.0 {
-                    player.velocity.x = 0.0;
-                } else if key == KeyCode::Left && player.velocity.x < 0.0 {
-                    player.velocity.x = 0.0;
+                if key == KeyCode::Right {
+                    if player.velocity.x > 0.0 {
+                        player.velocity.x = 0.0;
+                    }
+                } else if key == KeyCode::Left {
+                    if player.velocity.x < 0.0 {
+                        player.velocity.x = 0.0;
+                    }
                 } else if key == KeyCode::Up {
                     if player.velocity.y < -6.0 {
                         player.velocity.y = -6.0;
@@ -129,14 +133,12 @@ fn main() {
         while lag >= MS_PER_UPDATE {
             player.update();
 
-            layer.for_each_intersecting(&player.get_rect(), |tile: &Tile, x: i32, y: i32| {
+            layer.for_each_intersecting(&player.get_rect(), |tile: &Tile, position: &Rect| {
                 match *tile {
                     Tile::Empty => (),
-                    Tile::Floor => {
-                        let object = Rect::new(x, y, TILE_WIDTH, TILE_HEIGHT);
-
-                        if collision_detection(&object, &player.get_rect()) {
-                            let intersect = collision_intersect(&object, &player.get_rect());
+                    Tile::Floor(_) => {
+                        if collision_detection(position, &player.get_rect()) {
+                            let intersect = collision_intersect(position, &player.get_rect());
 
                             if intersect.w >= intersect.h {
                                 if player.velocity.y < 0.0 {
@@ -169,13 +171,11 @@ fn main() {
             ground.y += ground.h;
             ground.h = 1;
 
-            layer.for_each_intersecting(&ground, |tile: &Tile, x: i32, y: i32| {
+            layer.for_each_intersecting(&ground, |tile: &Tile, position: &Rect| {
                 match *tile {
                     Tile::Empty => (),
-                    Tile::Floor => {
-                        let object = Rect::new(x, y, TILE_WIDTH, TILE_HEIGHT);
-
-                        if collision_detection(&object, &ground) {
+                    Tile::Floor(_) => {
+                        if collision_detection(position, &ground) {
                             player.on_ground = true;
                         }
                     }
@@ -188,12 +188,12 @@ fn main() {
         let _ = renderer.set_draw_color(Color::RGB(0, 0, 0));
         let _ = renderer.clear();
 
-        layer.for_each_intersecting(&camera.get_rect(), |tile: &Tile, x: i32, y: i32| {
+        layer.for_each_intersecting(&camera.get_rect(), |tile: &Tile, position: &Rect| {
             match *tile {
                 Tile::Empty => (),
-                Tile::Floor => {
-                    let _ = renderer.set_draw_color(Color::RGB(0, 0, 255));
-                    let _ = renderer.fill_rect(&Rect::new(x, y, TILE_WIDTH, TILE_HEIGHT));
+                Tile::Floor(c) => {
+                    let _ = renderer.set_draw_color(c);
+                    let _ = renderer.fill_rect(position);
                 }
             }
         });

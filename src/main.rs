@@ -1,8 +1,6 @@
 extern crate sdl2;
 
 
-use std::cmp::{max, min};
-
 use sdl2::video::{Window, WindowPos, OPENGL};
 use sdl2::event::{poll_event, Event};
 use sdl2::timer::{get_ticks, delay};
@@ -12,11 +10,13 @@ use sdl2::pixels::Color;
 
 use tile::Layer;
 use player::Player;
+use camera::Camera;
 
 
 mod vec;
 mod tile;
 mod player;
+mod camera;
 
 
 const SCREEN_WIDTH : i32 = 960;
@@ -32,29 +32,6 @@ const MS_PER_UPDATE : uint = 10;
 enum Tile {
     Empty,
     Floor(Color)
-}
-
-
-struct Camera {
-    x: i32,
-    y: i32,
-    width: i32,
-    height: i32
-}
-
-impl Camera {
-    fn new(x: i32, y: i32, width: i32, height: i32) -> Camera {
-        Camera {
-            x: x,
-            y: y,
-            width: width,
-            height: height
-        }
-    }
-
-    fn get_rect(&self) -> Rect {
-        Rect::new(self.x, self.y, self.width, self.height)
-    }
 }
 
 
@@ -137,27 +114,30 @@ fn main() {
                 match *tile {
                     Tile::Empty => (),
                     Tile::Floor(_) => {
-                        if collision_detection(position, &player.get_rect()) {
-                            let intersect = collision_intersect(position, &player.get_rect());
+                        if position.has_intersection(&player.get_rect()) {
+                            match position.intersection(&player.get_rect()) {
+                                Some(intersect) => {
+                                    if intersect.w >= intersect.h {
+                                        if player.velocity.y < 0.0 {
+                                            player.position.y += intersect.h as f32;
+                                        } else {
+                                            player.position.y -= intersect.h as f32;
+                                        }
 
-                            if intersect.w >= intersect.h {
-                                if player.velocity.y < 0.0 {
-                                    player.position.y += intersect.h as f32;
-                                } else {
-                                    player.position.y -= intersect.h as f32;
-                                }
+                                        player.velocity.y = 0.0;
 
-                                player.velocity.y = 0.0;
+                                        player.on_ground = true;
+                                    } else {
+                                        if player.velocity.x < 0.0 {
+                                            player.position.x += intersect.w as f32;
+                                        } else {
+                                            player.position.x -= intersect.w as f32;
+                                        }
 
-                                player.on_ground = true;
-                            } else {
-                                if player.velocity.x < 0.0 {
-                                    player.position.x += intersect.w as f32;
-                                } else {
-                                    player.position.x -= intersect.w as f32;
-                                }
-
-                                player.velocity.x = 0.0;
+                                        player.velocity.x = 0.0;
+                                    }
+                                },
+                                None => (),
                             }
                         }
                     }
@@ -175,7 +155,7 @@ fn main() {
                 match *tile {
                     Tile::Empty => (),
                     Tile::Floor(_) => {
-                        if collision_detection(position, &ground) {
+                        if position.has_intersection(&ground) {
                             player.on_ground = true;
                         }
                     }
@@ -206,23 +186,4 @@ fn main() {
     }
 
     sdl2::quit();
-}
-
-fn collision_detection(lhs: &Rect, rhs: &Rect) -> bool {
-    if lhs.x + lhs.w <= rhs.x || rhs.x + rhs.w <= lhs.x {
-        false
-    }
-    else if lhs.y + lhs.h <= rhs.y || rhs.y + rhs.h <= lhs.y {
-        false
-    }
-    else {
-        true
-    }
-}
-
-fn collision_intersect(lhs: &Rect, rhs: &Rect) -> Rect {
-    let x = max(lhs.x, rhs.x);
-    let y = max(lhs.y, rhs.y);
-
-    Rect::new(x, y, min(lhs.x + lhs.w, rhs.x + rhs.w) - x, min(lhs.y + lhs.h, rhs.y + rhs.h) - y)
 }

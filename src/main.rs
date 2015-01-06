@@ -2,6 +2,7 @@ extern crate sdl2;
 
 
 use std::num::FloatMath;
+use std::iter::range_step_inclusive;
 
 use sdl2::video::{Window, WindowPos, OPENGL};
 use sdl2::event::{poll_event, Event};
@@ -53,8 +54,11 @@ fn main() {
 
     let colors = vec![Color::RGB(0, 0, 255), Color::RGB(0, 128, 255)];
 
-    for x in range(0, 120) {
+    for x in range(5, 120) {
         layer.set_tile(x, 14, Tile::Floor(colors[(x % 2) as uint]));
+    }
+    for x in range(11, 20) {
+        layer.set_tile(x, 13, Tile::Floor(colors[(x % 2) as uint]));
     }
 
     let mut camera = Camera::new(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, layer.to_rect());
@@ -110,6 +114,8 @@ fn main() {
         while lag >= MS_PER_UPDATE {
             player.update();
 
+            player.on_ground = false;
+
             let intersecting = layer.find_intersecting(&player.to_rect());
 
             if player.dx > 0.0 {
@@ -118,13 +124,11 @@ fn main() {
 
                 let mut d_x = player.dx;
 
-                for y in range(intersecting.y, intersecting.y + intersecting.h + 1) {
-                    for x in range(t_x, t_x + 2) {
+                for y in range_step_inclusive(intersecting.y, intersecting.y + intersecting.h, 1) {
+                    for x in range_step_inclusive(t_x, t_x + 1, 1) {
                         match *layer.get_tile(x, y) {
                             Tile::Empty => (),
-                            Tile::Floor(_) => {
-                                d_x = d_x.min((x * TILE_WIDTH) as f32 - p_x);
-                            }
+                            Tile::Floor(_) => d_x = d_x.min((x * TILE_WIDTH) as f32 - p_x)
                         }
                     }
                 }
@@ -140,13 +144,11 @@ fn main() {
 
                 let mut d_x = player.dx;
 
-                for y in range(intersecting.y, intersecting.y + intersecting.h + 1) {
-                    for x in range(t_x, t_x + 2) {
+                for y in range_step_inclusive(intersecting.y, intersecting.y + intersecting.h, 1) {
+                    for x in range_step_inclusive(t_x, t_x - 1, -1) {
                         match *layer.get_tile(x, y) {
                             Tile::Empty => (),
-                            Tile::Floor(_) => {
-                                d_x = d_x.min((x * TILE_WIDTH) as f32 - p_x);
-                            }
+                            Tile::Floor(_) => d_x = d_x.max((x * TILE_WIDTH + TILE_WIDTH) as f32 - p_x)
                         }
                     }
                 }
@@ -164,13 +166,11 @@ fn main() {
 
                 let mut d_y = player.dy;
 
-                for y in range(t_y, t_y + 2) {
-                    for x in range(intersecting.x, intersecting.x + intersecting.w + 1) {
+                for y in range_step_inclusive(t_y, t_y + 1, 1) {
+                    for x in range_step_inclusive(intersecting.x, intersecting.x + intersecting.w, 1) {
                         match *layer.get_tile(x, y) {
                             Tile::Empty => (),
-                            Tile::Floor(_) => {
-                                d_y = d_y.min((y * TILE_HEIGHT) as f32 - p_y);
-                            }
+                            Tile::Floor(_) => d_y = d_y.min((y * TILE_HEIGHT) as f32 - p_y)
                         }
                     }
                 }
@@ -188,13 +188,11 @@ fn main() {
 
                 let mut d_y = player.dy;
 
-                for y in range(t_y, t_y + 2) {
-                    for x in range(intersecting.x, intersecting.x + intersecting.w + 1) {
+                for y in range_step_inclusive(t_y, t_y - 1, -1) {
+                    for x in range_step_inclusive(intersecting.x, intersecting.x + intersecting.w, 1) {
                         match *layer.get_tile(x, y) {
                             Tile::Empty => (),
-                            Tile::Floor(_) => {
-                                d_y = d_y.min((y * TILE_HEIGHT) as f32 - p_y);
-                            }
+                            Tile::Floor(_) => d_y = d_y.max((y * TILE_HEIGHT + TILE_HEIGHT) as f32 - p_y)
                         }
                     }
                 }

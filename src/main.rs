@@ -1,7 +1,7 @@
 extern crate sdl2;
 
 use std::num::Float;
-use std::iter::range_step_inclusive;
+use std::iter::range_step;
 
 use sdl2::video::{Window, WindowPos, OPENGL};
 use sdl2::event::{poll_event, Event};
@@ -140,88 +140,126 @@ fn main() {
 
             player.on_ground = false;
 
-            if let Some(intersecting) = layer.find_intersecting(&player.to_rect()) {
+            if let Some(intersect) = layer.find_intersecting(&player.to_rect()) {
                 if player.dx > 0.0 {
-                    let p_x = player.x + player.w as f32;
-                    let t_x = intersecting.x + intersecting.w;
+                    let p = player.x + player.w as f32;
+                    let mut d = player.dx;
 
-                    let mut d_x = player.dx;
+                    for y in range(intersect.y, intersect.y + intersect.h + 1) {
+                        let mut x = intersect.x;
 
-                    for y in range_step_inclusive(intersecting.y, intersecting.y + intersecting.h, 1) {
-                        for x in range_step_inclusive(t_x, t_x + 1, 1) {
-                            d_x = match *layer.get_tile(x, y) {
-                                Tile::Empty => d_x,
-                                Tile::Floor(_) => d_x.min((x * TILE_WIDTH) as f32 - p_x)
+                        loop {
+                            let t = (x * TILE_WIDTH) as f32 - p;
+
+                            if t > d {
+                                break;
                             }
+
+                            // @todo get_tile should return Option<Tile>
+                            d = match *layer.get_tile(x, y) {
+                                Tile::Empty => d,
+                                Tile::Floor(_) => d.min(t)
+                            };
+
+                            x += 1;
                         }
                     }
 
-                    if d_x > 0.0 {
-                        player.x += d_x;
+                    if d > 0.0 {
+                        player.x += d;
                     } else {
                         player.dx = 0.0;
                     }
                 } else if player.dx < 0.0 {
-                    let p_x = player.x;
-                    let t_x = intersecting.x;
+                    let p = player.x;
+                    let mut d = player.dx;
 
-                    let mut d_x = player.dx;
+                    for y in range(intersect.y, intersect.y + intersect.h + 1) {
+                        let mut x = intersect.x;
 
-                    for y in range_step_inclusive(intersecting.y, intersecting.y + intersecting.h, 1) {
-                        for x in range_step_inclusive(t_x, t_x - 1, -1) {
-                            d_x = match *layer.get_tile(x, y) {
-                                Tile::Empty => d_x,
-                                Tile::Floor(_) => d_x.max((x * TILE_WIDTH + TILE_WIDTH) as f32 - p_x)
+                        loop {
+                            let t = (x * TILE_WIDTH + TILE_WIDTH) as f32 - p;
+
+                            if t < d {
+                                break;
                             }
+
+                            // @todo get_tile should return Option<Tile>
+                            d = match *layer.get_tile(x, y) {
+                                Tile::Empty => d,
+                                Tile::Floor(_) => d.max(t)
+                            };
+
+                            x -= 1;
                         }
                     }
 
-                    if d_x < 0.0 {
-                        player.x += d_x;
+                    if d < 0.0 {
+                        player.x += d;
                     } else {
                         player.dx = 0.0;
                     }
                 }
 
                 if player.dy > 0.0 {
-                    let p_y = player.y + player.h as f32;
-                    let t_y = intersecting.y + intersecting.h;
+                    let p = player.y + player.h as f32;
+                    let mut d = player.dy;
 
-                    let mut d_y = player.dy;
+                    for x in range(intersect.x, intersect.x + intersect.w + 1) {
+                        let mut y = intersect.y;
 
-                    for y in range_step_inclusive(t_y, t_y + 1, 1) {
-                        for x in range_step_inclusive(intersecting.x, intersecting.x + intersecting.w, 1) {
-                            d_y = match *layer.get_tile(x, y) {
-                                Tile::Empty => d_y,
-                                Tile::Floor(_) => d_y.min((y * TILE_HEIGHT) as f32 - p_y)
+                        loop {
+                            let t = (y * TILE_HEIGHT) as f32 - p;
+
+                            if t > d {
+                                break;
                             }
+
+                            // @todo get_tile should return Option<Tile>
+                            d = match *layer.get_tile(x, y) {
+                                Tile::Empty => d,
+                                Tile::Floor(_) => d.min(t)
+                            };
+
+                            y += 1;
                         }
                     }
 
-                    if d_y > 0.0 {
-                        player.y += d_y;
+                    if d > 0.0 {
+                        player.y += d;
                     } else {
                         player.dy = 0.0;
 
                         player.on_ground = true;
                     }
                 } else if player.dy < 0.0 {
-                    let p_y = player.y;
-                    let t_y = intersecting.y;
+                    let p = player.y;
+                    let mut d = player.dy;
 
-                    let mut d_y = player.dy;
+                    for x in range(intersect.x, intersect.x + intersect.w + 1) {
+                        let mut y = intersect.y;
 
-                    for y in range_step_inclusive(t_y, t_y - 1, -1) {
-                        for x in range_step_inclusive(intersecting.x, intersecting.x + intersecting.w, 1) {
-                            d_y = match *layer.get_tile(x, y) {
-                                Tile::Empty => d_y,
-                                Tile::Floor(_) => d_y.max((y * TILE_HEIGHT + TILE_HEIGHT) as f32 - p_y)
+                        loop {
+                            let t = (y * TILE_HEIGHT + TILE_HEIGHT) as f32 - p;
+
+                            println!("x={}, y={}, d={}, t={}", x, y, d, t);
+
+                            if t < d {
+                                break;
                             }
+
+                            // @todo get_tile should return Option<Tile>
+                            d = match *layer.get_tile(x, y) {
+                                Tile::Empty => d,
+                                Tile::Floor(_) => d.max(t)
+                            };
+
+                            y -= 1;
                         }
                     }
 
-                    if d_y < 0.0 {
-                        player.y += d_y;
+                    if d < 0.0 {
+                        player.y += d;
                     } else {
                         player.dy = 0.0;
                     }

@@ -41,8 +41,6 @@ impl<T> Layer<T> where T: Clone {
         let x2 = min((rect.x + rect.w - 1) / self.tile_width, self.width - 1);
         let y2 = min((rect.y + rect.h - 1) / self.tile_height, self.height - 1);
 
-        println!("{}, {}, {}, {}", x1, y1, x2, y2);
-
         if x1 < 0 || x2 >= self.width {
             None
         }

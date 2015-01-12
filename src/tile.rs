@@ -23,10 +23,14 @@ impl<T> Layer<T> where T: Clone {
         }
     }
 
-    pub fn get_tile(&self, x: i32, y: i32) -> &T {
+    pub fn get_tile(&self, x: i32, y: i32) -> Option<&T> {
         let offset = (x + y * self.width) as usize;
 
-        &self.tiles[offset]
+        if offset >= 0 && offset < self.tiles.len() {
+            Some(&self.tiles[offset])
+        } else {
+            None
+        }
     }
 
     pub fn set_tile(&mut self, x: i32, y: i32, tile: T) {
@@ -58,7 +62,7 @@ impl<T> Layer<T> where T: Clone {
                 for x in range(intersect.x, intersect.x + intersect.w + 1) {
                     let position = Rect::new(x * self.tile_width, y * self.tile_height, self.tile_width, self.tile_height);
 
-                    f(self.get_tile(x, y), &position);
+                    f(self.get_tile(x, y).unwrap(), &position);
                 }
             }
         }

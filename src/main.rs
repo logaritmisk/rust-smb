@@ -87,7 +87,9 @@ fn main() {
             match poll_event() {
                 Event::Quit(_) => break 'main,
                 Event::KeyDown(_, _, key, _, _, repeat) => {
-                    keyboard.key_down(key);
+                    if repeat == false {
+                        keyboard.key_down(key);
+                    }
                 },
                 Event::KeyUp(_, _, key, _, _, _) => {
                     keyboard.key_up(key);
@@ -155,11 +157,14 @@ fn main() {
                                 break;
                             }
 
-                            // @todo get_tile should return Option<Tile>
-                            d = match *layer.get_tile(x, y) {
-                                Tile::Empty => d,
-                                Tile::Floor(_) => d.min(t)
-                            };
+                            if let Some(tile) = layer.get_tile(x, y) {
+                                d = match *tile {
+                                    Tile::Empty => d,
+                                    Tile::Floor(_) => d.min(t)
+                                };
+                            } else {
+                                break;
+                            }
 
                             x += 1;
                         }
@@ -184,11 +189,14 @@ fn main() {
                                 break;
                             }
 
-                            // @todo get_tile should return Option<Tile>
-                            d = match *layer.get_tile(x, y) {
-                                Tile::Empty => d,
-                                Tile::Floor(_) => d.max(t)
-                            };
+                            if let Some(tile) = layer.get_tile(x, y) {
+                                d = match *tile {
+                                    Tile::Empty => d,
+                                    Tile::Floor(_) => d.max(t)
+                                };
+                            } else {
+                                break;
+                            }
 
                             x -= 1;
                         }
@@ -215,11 +223,14 @@ fn main() {
                                 break;
                             }
 
-                            // @todo get_tile should return Option<Tile>
-                            d = match *layer.get_tile(x, y) {
-                                Tile::Empty => d,
-                                Tile::Floor(_) => d.min(t)
-                            };
+                            if let Some(tile) = layer.get_tile(x, y) {
+                                d = match *tile {
+                                    Tile::Empty => d,
+                                    Tile::Floor(_) => d.min(t)
+                                };
+                            } else {
+                                break;
+                            }
 
                             y += 1;
                         }
@@ -242,17 +253,18 @@ fn main() {
                         loop {
                             let t = (y * TILE_HEIGHT + TILE_HEIGHT) as f32 - p;
 
-                            println!("x={}, y={}, d={}, t={}", x, y, d, t);
-
                             if t < d {
                                 break;
                             }
 
-                            // @todo get_tile should return Option<Tile>
-                            d = match *layer.get_tile(x, y) {
-                                Tile::Empty => d,
-                                Tile::Floor(_) => d.max(t)
-                            };
+                            if let Some(tile) = layer.get_tile(x, y) {
+                                d = match *tile {
+                                    Tile::Empty => d,
+                                    Tile::Floor(_) => d.max(t)
+                                };
+                            } else {
+                                break;
+                            }
 
                             y -= 1;
                         }

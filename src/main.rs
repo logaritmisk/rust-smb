@@ -7,7 +7,7 @@ use std::iter::range_step;
 use sdl2::video::{Window, WindowPos, OPENGL};
 use sdl2::event::{poll_event, Event};
 use sdl2::timer::{get_ticks, delay};
-use sdl2::rect::{Point, Rect};
+use sdl2::rect::Rect;
 use sdl2::keycode::KeyCode;
 use sdl2::pixels::Color;
 
@@ -30,12 +30,12 @@ const TILE_HEIGHT : i32 = 32;
 
 const MS_PER_UPDATE : usize = 10;
 
-const PLAYER_SPEED_X : f32 = 8.0;
+const PLAYER_SPEED_X : f32 = 4.0;
 const PLAYER_THRESHOLD_X : f32 = 0.2;
 
-const PLAYER_ACCELERATION_X_START : f32 = 0.01;
-const PLAYER_ACCELERATION_X_STOP : f32 = 0.08;
-const PLAYER_ACCELERATION_X_CHANGE : f32 = 0.018;
+const PLAYER_ACCELERATION_X_START : f32 = 0.02;
+const PLAYER_ACCELERATION_X_STOP : f32 = 0.1;
+const PLAYER_ACCELERATION_X_CHANGE : f32 = 0.06;
 
 
 #[derive(Clone)]
@@ -76,7 +76,7 @@ fn main() {
 
     let mut camera = Camera::new(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, layer.to_rect());
 
-    let mut player = Player::new(290.0, 390.0);
+    let mut player = Player::new(390.0, 390.0);
 
     let mut current : usize;
     let mut elapsed : usize;
@@ -111,30 +111,26 @@ fn main() {
             break 'main;
         }
 
-        if keyboard.is_held(KeyCode::Right) {
+
+        if keyboard.is_held(KeyCode::Right) && (player.dx >= 0.0 || player.on_ground) {
             let a = if player.dx > 0.0 {
                 PLAYER_ACCELERATION_X_START
             } else {
                 PLAYER_ACCELERATION_X_CHANGE
             };
 
-            let t = 8.0;
-
             player.dx = a * PLAYER_SPEED_X + (1.0 - a) * player.dx;
         }
-        else if keyboard.is_held(KeyCode::Left) {
+        else if keyboard.is_held(KeyCode::Left) && (player.dx <= 0.0 || player.on_ground) {
             let a = if player.dx < 0.0 {
                 PLAYER_ACCELERATION_X_START
             } else {
                 PLAYER_ACCELERATION_X_CHANGE
             };
 
-            let t = -8.0;
-
             player.dx = a * -PLAYER_SPEED_X + (1.0 - a) * player.dx;
-        } else {
+        } else if player.on_ground {
             let a = PLAYER_ACCELERATION_X_STOP;
-            let t = 0.0;
 
             player.dx = (1.0 - a) * player.dx;
 
@@ -143,17 +139,17 @@ fn main() {
             }
         }
 
-        if keyboard.was_pressed(KeyCode::Up) {
-            if player.on_ground {
-                player.dy = -12.0;
+        if player.on_ground {
+            if keyboard.was_pressed(KeyCode::Up) {
+                player.dy = -8.0;
 
                 player.on_ground = false;
             }
         }
 
         if keyboard.was_released(KeyCode::Up) {
-            if player.dy < -6.0 {
-                player.dy = -6.0;
+            if player.dy < -4.0 {
+                player.dy = -4.0;
             }
         }
 
@@ -181,7 +177,7 @@ fn main() {
                                 d = match *tile {
                                     Tile::Empty => d,
                                     Tile::Floor(_) => d.min(t)
-                                };
+                                }
                             } else {
                                 break;
                             }
@@ -192,6 +188,9 @@ fn main() {
 
                     if d > 0.0 {
                         player.x += d;
+                    } else if d < 0.0 {
+                        player.x += d;
+                        player.dx = 0.0;
                     } else {
                         player.dx = 0.0;
                     }
@@ -213,7 +212,7 @@ fn main() {
                                 d = match *tile {
                                     Tile::Empty => d,
                                     Tile::Floor(_) => d.max(t)
-                                };
+                                }
                             } else {
                                 break;
                             }
@@ -224,6 +223,9 @@ fn main() {
 
                     if d < 0.0 {
                         player.x += d;
+                    } else if d > 0.0 {
+                        player.x += d;
+                        player.dx = 0.0;
                     } else {
                         player.dx = 0.0;
                     }
@@ -247,7 +249,7 @@ fn main() {
                                 d = match *tile {
                                     Tile::Empty => d,
                                     Tile::Floor(_) => d.min(t)
-                                };
+                                }
                             } else {
                                 break;
                             }
@@ -258,6 +260,11 @@ fn main() {
 
                     if d > 0.0 {
                         player.y += d;
+                    } else if d < 0.0 {
+                        player.y += d;
+                        player.dy = 0.0;
+
+                        player.on_ground = true;
                     } else {
                         player.dy = 0.0;
 
@@ -281,7 +288,7 @@ fn main() {
                                 d = match *tile {
                                     Tile::Empty => d,
                                     Tile::Floor(_) => d.max(t)
-                                };
+                                }
                             } else {
                                 break;
                             }
@@ -292,6 +299,9 @@ fn main() {
 
                     if d < 0.0 {
                         player.y += d;
+                    } else if d > 0.0 {
+                        player.y += d;
+                        player.dy = 0.0;
                     } else {
                         player.dy = 0.0;
                     }

@@ -1,7 +1,7 @@
 use std::iter::repeat;
 use std::cmp::{min, max};
 
-use sdl2::rect::{Point, Rect};
+use sdl2::rect::Rect;
 
 
 pub struct Layer<T> {
@@ -26,7 +26,7 @@ impl<T> Layer<T> where T: Clone {
     pub fn get_tile(&self, x: i32, y: i32) -> Option<&T> {
         let offset = (x + y * self.width) as usize;
 
-        if offset >= 0 && offset < self.tiles.len() {
+        if offset < self.tiles.len() {
             Some(&self.tiles[offset])
         } else {
             None

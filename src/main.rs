@@ -1,5 +1,6 @@
 extern crate sdl2;
 
+
 use std::num::Float;
 use std::iter::range_step;
 
@@ -28,6 +29,13 @@ const TILE_WIDTH : i32 = 32;
 const TILE_HEIGHT : i32 = 32;
 
 const MS_PER_UPDATE : usize = 10;
+
+const PLAYER_SPEED_X : f32 = 8.0;
+const PLAYER_THRESHOLD_X : f32 = 0.2;
+
+const PLAYER_ACCELERATION_X_START : f32 = 0.01;
+const PLAYER_ACCELERATION_X_STOP : f32 = 0.08;
+const PLAYER_ACCELERATION_X_CHANGE : f32 = 0.018;
 
 
 #[derive(Clone)]
@@ -104,11 +112,35 @@ fn main() {
         }
 
         if keyboard.is_held(KeyCode::Right) {
-            player.dx = 4.0;
-        }
+            let a = if player.dx > 0.0 {
+                PLAYER_ACCELERATION_X_START
+            } else {
+                PLAYER_ACCELERATION_X_CHANGE
+            };
 
-        if keyboard.is_held(KeyCode::Left) {
-            player.dx = -4.0;
+            let t = 8.0;
+
+            player.dx = a * PLAYER_SPEED_X + (1.0 - a) * player.dx;
+        }
+        else if keyboard.is_held(KeyCode::Left) {
+            let a = if player.dx < 0.0 {
+                PLAYER_ACCELERATION_X_START
+            } else {
+                PLAYER_ACCELERATION_X_CHANGE
+            };
+
+            let t = -8.0;
+
+            player.dx = a * -PLAYER_SPEED_X + (1.0 - a) * player.dx;
+        } else {
+            let a = PLAYER_ACCELERATION_X_STOP;
+            let t = 0.0;
+
+            player.dx = (1.0 - a) * player.dx;
+
+            if player.dx.abs() <= PLAYER_THRESHOLD_X {
+                player.dx = 0.0;
+            }
         }
 
         if keyboard.was_pressed(KeyCode::Up) {
@@ -116,18 +148,6 @@ fn main() {
                 player.dy = -12.0;
 
                 player.on_ground = false;
-            }
-        }
-
-        if keyboard.was_released(KeyCode::Right) {
-            if player.dx > 0.0 {
-                player.dx = 0.0;
-            }
-        }
-
-        if keyboard.was_released(KeyCode::Left) {
-            if player.dx < 0.0 {
-                player.dx = 0.0;
             }
         }
 

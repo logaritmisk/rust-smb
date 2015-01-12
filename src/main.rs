@@ -1,24 +1,24 @@
 extern crate sdl2;
 
-
-use std::num::FloatMath;
+use std::num::Float;
 use std::iter::range_step_inclusive;
 
 use sdl2::video::{Window, WindowPos, OPENGL};
 use sdl2::event::{poll_event, Event};
 use sdl2::timer::{get_ticks, delay};
-use sdl2::rect::Rect;
+use sdl2::rect::{Point, Rect};
 use sdl2::keycode::KeyCode;
 use sdl2::pixels::Color;
 
 use tile::Layer;
 use camera::Camera;
 use player::Player;
-
+use keyboard::KeyboardHandler;
 
 mod tile;
 mod camera;
 mod player;
+mod keyboard;
 
 
 const SCREEN_WIDTH : i32 = 960;
@@ -27,7 +27,7 @@ const SCREEN_HEIGHT : i32 = 640;
 const TILE_WIDTH : i32 = 32;
 const TILE_HEIGHT : i32 = 32;
 
-const MS_PER_UPDATE : uint = 10;
+const MS_PER_UPDATE : usize = 10;
 
 
 #[derive(Clone)]
@@ -40,7 +40,7 @@ enum Tile {
 fn main() {
     sdl2::init(sdl2::INIT_EVERYTHING);
 
-    let window = match Window::new("Super Matte Bros", WindowPos::PosCentered, WindowPos::PosCentered, SCREEN_WIDTH as int, SCREEN_HEIGHT as int, OPENGL) {
+    let window = match Window::new("Super Matte Bros", WindowPos::PosCentered, WindowPos::PosCentered, SCREEN_WIDTH as isize, SCREEN_HEIGHT as isize, OPENGL) {
         Ok(window) => window,
         Err(err) => panic!("failed to create window: {}", err)
     };
@@ -50,65 +50,89 @@ fn main() {
         Err(err) => panic!("failed to create renderer: {}", err)
     };
 
+    let mut keyboard = KeyboardHandler::new();
+
     let mut layer = Layer::new(120, 20, TILE_WIDTH, TILE_HEIGHT, Tile::Empty);
 
     let colors = vec![Color::RGB(0, 0, 255), Color::RGB(0, 128, 255)];
 
     for x in range(5, 120) {
-        layer.set_tile(x, 14, Tile::Floor(colors[(x % 2) as uint]));
+        layer.set_tile(x, 14, Tile::Floor(colors[(x % 2) as usize]));
     }
     for x in range(11, 20) {
-        layer.set_tile(x, 13, Tile::Floor(colors[(x % 2) as uint]));
+        layer.set_tile(x, 13, Tile::Floor(colors[(x % 2) as usize]));
+    }
+    for x in range(14, 20) {
+        layer.set_tile(x, 11, Tile::Floor(colors[(x % 2) as usize]));
     }
 
     let mut camera = Camera::new(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, layer.to_rect());
 
     let mut player = Player::new(290.0, 390.0);
 
-    let mut current : uint;
-    let mut elapsed : uint;
-    let mut previous : uint = get_ticks();
-    let mut lag : uint = 0;
+    let mut current : usize;
+    let mut elapsed : usize;
+    let mut previous : usize = get_ticks();
+    let mut lag : usize = 0;
 
-    loop {
+    'main : loop {
         current = get_ticks();
         elapsed = current - previous;
         previous = current;
         lag += elapsed;
 
-        match poll_event() {
-            Event::Quit(_) => break,
-            Event::KeyDown(_, _, key, _, _, repeat) => {
-                if key == KeyCode::Escape {
-                    break;
-                } else if key == KeyCode::Right {
-                    player.dx = 4.0;
-                } else if key == KeyCode::Left {
-                    player.dx = -4.0;
-                } else if key == KeyCode::Up {
-                    if player.on_ground && repeat == false {
-                        player.dy = -12.0;
+        keyboard.clear();
 
-                        player.on_ground = false;
-                    }
-                }
-            },
-            Event::KeyUp(_, _, key, _, _, _) => {
-                if key == KeyCode::Right {
-                    if player.dx > 0.0 {
-                        player.dx = 0.0;
-                    }
-                } else if key == KeyCode::Left {
-                    if player.dx < 0.0 {
-                        player.dx = 0.0;
-                    }
-                } else if key == KeyCode::Up {
-                    if player.dy < -6.0 {
-                        player.dy = -6.0;
-                    }
-                }
-            },
-            _ => (),
+        'event : loop {
+            match poll_event() {
+                Event::Quit(_) => break 'main,
+                Event::KeyDown(_, _, key, _, _, repeat) => {
+                    keyboard.key_down(key);
+                },
+                Event::KeyUp(_, _, key, _, _, _) => {
+                    keyboard.key_up(key);
+                },
+                Event::None => break 'event,
+                _ => (),
+            }
+        }
+
+        if keyboard.was_pressed(KeyCode::Escape) {
+            break 'main;
+        }
+
+        if keyboard.is_held(KeyCode::Right) {
+            player.dx = 4.0;
+        }
+
+        if keyboard.is_held(KeyCode::Left) {
+            player.dx = -4.0;
+        }
+
+        if keyboard.was_pressed(KeyCode::Up) {
+            if player.on_ground {
+                player.dy = -12.0;
+
+                player.on_ground = false;
+            }
+        }
+
+        if keyboard.was_released(KeyCode::Right) {
+            if player.dx > 0.0 {
+                player.dx = 0.0;
+            }
+        }
+
+        if keyboard.was_released(KeyCode::Left) {
+            if player.dx < 0.0 {
+                player.dx = 0.0;
+            }
+        }
+
+        if keyboard.was_released(KeyCode::Up) {
+            if player.dy < -6.0 {
+                player.dy = -6.0;
+            }
         }
 
         while lag >= MS_PER_UPDATE {
@@ -116,91 +140,91 @@ fn main() {
 
             player.on_ground = false;
 
-            let intersecting = layer.find_intersecting(&player.to_rect());
+            if let Some(intersecting) = layer.find_intersecting(&player.to_rect()) {
+                if player.dx > 0.0 {
+                    let p_x = player.x + player.w as f32;
+                    let t_x = intersecting.x + intersecting.w;
 
-            if player.dx > 0.0 {
-                let p_x = player.x + player.w as f32;
-                let t_x = intersecting.x + intersecting.w;
+                    let mut d_x = player.dx;
 
-                let mut d_x = player.dx;
-
-                for y in range_step_inclusive(intersecting.y, intersecting.y + intersecting.h, 1) {
-                    for x in range_step_inclusive(t_x, t_x + 1, 1) {
-                        match *layer.get_tile(x, y) {
-                            Tile::Empty => (),
-                            Tile::Floor(_) => d_x = d_x.min((x * TILE_WIDTH) as f32 - p_x)
+                    for y in range_step_inclusive(intersecting.y, intersecting.y + intersecting.h, 1) {
+                        for x in range_step_inclusive(t_x, t_x + 1, 1) {
+                            d_x = match *layer.get_tile(x, y) {
+                                Tile::Empty => d_x,
+                                Tile::Floor(_) => d_x.min((x * TILE_WIDTH) as f32 - p_x)
+                            }
                         }
+                    }
+
+                    if d_x > 0.0 {
+                        player.x += d_x;
+                    } else {
+                        player.dx = 0.0;
+                    }
+                } else if player.dx < 0.0 {
+                    let p_x = player.x;
+                    let t_x = intersecting.x;
+
+                    let mut d_x = player.dx;
+
+                    for y in range_step_inclusive(intersecting.y, intersecting.y + intersecting.h, 1) {
+                        for x in range_step_inclusive(t_x, t_x - 1, -1) {
+                            d_x = match *layer.get_tile(x, y) {
+                                Tile::Empty => d_x,
+                                Tile::Floor(_) => d_x.max((x * TILE_WIDTH + TILE_WIDTH) as f32 - p_x)
+                            }
+                        }
+                    }
+
+                    if d_x < 0.0 {
+                        player.x += d_x;
+                    } else {
+                        player.dx = 0.0;
                     }
                 }
 
-                if d_x > 0.0 {
-                    player.x += d_x;
-                } else {
-                    player.dx = 0.0;
-                }
-            } else if player.dx < 0.0 {
-                let p_x = player.x;
-                let t_x = intersecting.x;
+                if player.dy > 0.0 {
+                    let p_y = player.y + player.h as f32;
+                    let t_y = intersecting.y + intersecting.h;
 
-                let mut d_x = player.dx;
+                    let mut d_y = player.dy;
 
-                for y in range_step_inclusive(intersecting.y, intersecting.y + intersecting.h, 1) {
-                    for x in range_step_inclusive(t_x, t_x - 1, -1) {
-                        match *layer.get_tile(x, y) {
-                            Tile::Empty => (),
-                            Tile::Floor(_) => d_x = d_x.max((x * TILE_WIDTH + TILE_WIDTH) as f32 - p_x)
+                    for y in range_step_inclusive(t_y, t_y + 1, 1) {
+                        for x in range_step_inclusive(intersecting.x, intersecting.x + intersecting.w, 1) {
+                            d_y = match *layer.get_tile(x, y) {
+                                Tile::Empty => d_y,
+                                Tile::Floor(_) => d_y.min((y * TILE_HEIGHT) as f32 - p_y)
+                            }
                         }
                     }
-                }
 
-                if d_x < 0.0 {
-                    player.x += d_x;
-                } else {
-                    player.dx = 0.0;
-                }
-            }
+                    if d_y > 0.0 {
+                        player.y += d_y;
+                    } else {
+                        player.dy = 0.0;
 
-            if player.dy > 0.0 {
-                let p_y = player.y + player.h as f32;
-                let t_y = intersecting.y + intersecting.h;
+                        player.on_ground = true;
+                    }
+                } else if player.dy < 0.0 {
+                    let p_y = player.y;
+                    let t_y = intersecting.y;
 
-                let mut d_y = player.dy;
+                    let mut d_y = player.dy;
 
-                for y in range_step_inclusive(t_y, t_y + 1, 1) {
-                    for x in range_step_inclusive(intersecting.x, intersecting.x + intersecting.w, 1) {
-                        match *layer.get_tile(x, y) {
-                            Tile::Empty => (),
-                            Tile::Floor(_) => d_y = d_y.min((y * TILE_HEIGHT) as f32 - p_y)
+                    for y in range_step_inclusive(t_y, t_y - 1, -1) {
+                        for x in range_step_inclusive(intersecting.x, intersecting.x + intersecting.w, 1) {
+                            d_y = match *layer.get_tile(x, y) {
+                                Tile::Empty => d_y,
+                                Tile::Floor(_) => d_y.max((y * TILE_HEIGHT + TILE_HEIGHT) as f32 - p_y)
+                            }
                         }
                     }
-                }
 
-                if d_y > 0.0 {
-                    player.y += d_y;
-                } else {
-                    player.dy = 0.0;
-
-                    player.on_ground = true;
-                }
-            } else if player.dy < 0.0 {
-                let p_y = player.y;
-                let t_y = intersecting.y;
-
-                let mut d_y = player.dy;
-
-                for y in range_step_inclusive(t_y, t_y - 1, -1) {
-                    for x in range_step_inclusive(intersecting.x, intersecting.x + intersecting.w, 1) {
-                        match *layer.get_tile(x, y) {
-                            Tile::Empty => (),
-                            Tile::Floor(_) => d_y = d_y.max((y * TILE_HEIGHT + TILE_HEIGHT) as f32 - p_y)
-                        }
+                    if d_y < 0.0 {
+                        player.y += d_y;
+                    } else {
+                        player.dy = 0.0;
                     }
-                }
-
-                if d_y < 0.0 {
-                    player.y += d_y;
-                } else {
-                    player.dy = 0.0;
                 }
             }
 

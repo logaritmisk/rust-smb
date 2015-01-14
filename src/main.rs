@@ -1,6 +1,7 @@
 extern crate sdl2;
+extern crate sdl2_image;
 
-
+use std::os;
 use std::num::Float;
 use std::iter::range_step;
 
@@ -34,7 +35,7 @@ const PLAYER_SPEED_X : f32 = 4.0;
 const PLAYER_THRESHOLD_X : f32 = 0.2;
 
 const PLAYER_ACCELERATION_X_START : f32 = 0.02;
-const PLAYER_ACCELERATION_X_STOP : f32 = 0.1;
+const PLAYER_ACCELERATION_X_STOP : f32 = 0.15;
 const PLAYER_ACCELERATION_X_CHANGE : f32 = 0.06;
 
 
@@ -47,6 +48,7 @@ enum Tile {
 
 fn main() {
     sdl2::init(sdl2::INIT_EVERYTHING);
+    sdl2_image::init(sdl2_image::INIT_PNG);
 
     let window = match Window::new("Super Matte Bros", WindowPos::PosCentered, WindowPos::PosCentered, SCREEN_WIDTH as isize, SCREEN_HEIGHT as isize, OPENGL) {
         Ok(window) => window,
@@ -56,6 +58,18 @@ fn main() {
     let renderer = match sdl2::render::Renderer::from_window(window, sdl2::render::RenderDriverIndex::Auto, sdl2::render::ACCELERATED) {
         Ok(renderer) => renderer,
         Err(err) => panic!("failed to create renderer: {}", err)
+    };
+
+    let floor = Path::new("gfx/floor.png");
+
+    let surface = match sdl2_image::LoadSurface::from_file(&floor) {
+        Ok(surface) => surface,
+        Err(err) => panic!(format!("failed to load png: {}", err))
+    };
+
+    let texture = match renderer.create_texture_from_surface(&surface) {
+        Ok(texture) => texture,
+        Err(err) => panic!(format!("failed to create surface: {}", err))
     };
 
     let mut keyboard = KeyboardHandler::new();
@@ -111,7 +125,6 @@ fn main() {
             break 'main;
         }
 
-
         if keyboard.is_held(KeyCode::Right) && (player.dx >= 0.0 || player.on_ground) {
             let a = if player.dx > 0.0 {
                 PLAYER_ACCELERATION_X_START
@@ -120,8 +133,7 @@ fn main() {
             };
 
             player.dx = a * PLAYER_SPEED_X + (1.0 - a) * player.dx;
-        }
-        else if keyboard.is_held(KeyCode::Left) && (player.dx <= 0.0 || player.on_ground) {
+        } else if keyboard.is_held(KeyCode::Left) && (player.dx <= 0.0 || player.on_ground) {
             let a = if player.dx < 0.0 {
                 PLAYER_ACCELERATION_X_START
             } else {
@@ -130,9 +142,7 @@ fn main() {
 
             player.dx = a * -PLAYER_SPEED_X + (1.0 - a) * player.dx;
         } else if player.on_ground {
-            let a = PLAYER_ACCELERATION_X_STOP;
-
-            player.dx = (1.0 - a) * player.dx;
+            player.dx = (1.0 - PLAYER_ACCELERATION_X_STOP) * player.dx;
 
             if player.dx.abs() <= PLAYER_THRESHOLD_X {
                 player.dx = 0.0;
@@ -333,11 +343,14 @@ fn main() {
         let _ = renderer.set_draw_color(Color::RGB(0, 255, 0));
         let _ = renderer.fill_rect(&player_rect);
 
+        let _ = renderer.copy(&texture, None, Some(Rect::new(0, 0, 32, 32)));
+
         renderer.present();
 
         delay(5);
     }
 
+    sdl2_image::quit();
     sdl2::quit();
 }
 

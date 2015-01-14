@@ -9,7 +9,7 @@ It time for me to learn Rust, and why not try to make a simple Super Mario Bros 
 
 ```shell
 $ curl -s https://static.rust-lang.org/rustup.sh | sudo sh
-$ brew install sdl2
+$ brew install sdl2 sdl2_image
 ```
 
 

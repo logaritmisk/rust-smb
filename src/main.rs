@@ -1,9 +1,8 @@
 extern crate sdl2;
 extern crate sdl2_image;
 
-use std::os;
+
 use std::num::Float;
-use std::iter::range_step;
 
 use sdl2::video::{Window, WindowPos, OPENGL};
 use sdl2::event::{poll_event, Event};
@@ -42,7 +41,85 @@ const PLAYER_ACCELERATION_X_CHANGE : f32 = 0.06;
 #[derive(Clone)]
 enum Tile {
     Empty,
-    Floor(Color)
+    Background(Rect),
+    Floor(Rect)
+}
+
+
+trait Sprite {
+    fn update(&mut self, usize) {}
+    fn render(&self, &sdl2::render::Renderer, &Rect);
+}
+
+
+struct StaticSprite<'a> {
+    texture: &'a sdl2::render::Texture,
+    x: i32,
+    y: i32
+}
+
+impl<'a> StaticSprite<'a> {
+    fn new(texture: &'a sdl2::render::Texture, x: i32, y: i32) -> StaticSprite<'a> {
+        StaticSprite {
+            texture: texture,
+            x: x,
+            y: y
+        }
+    }
+}
+
+impl<'a> Sprite for StaticSprite<'a> {
+    fn render(&self, renderer: &sdl2::render::Renderer, destination: &Rect) {
+        let _ = renderer.copy(self.texture, Some(Rect::new(80 + (16 * self.x), 16 * self.y, 16, 16)), Some(*destination));
+    }
+}
+
+
+struct AnimatedSprite<'a> {
+    texture: &'a sdl2::render::Texture,
+    x: i32,
+    y: i32,
+    frame: i32,
+    frames: i32,
+    time: usize,
+    frame_time: usize
+}
+
+impl<'a> AnimatedSprite<'a> {
+    fn new(texture: &'a sdl2::render::Texture, x: i32, y: i32, frames: i32, fps: i32) -> AnimatedSprite<'a> {
+        AnimatedSprite {
+            texture: texture,
+            x: x,
+            y: y,
+            frame: 0,
+            frames: frames,
+            time: 0,
+            frame_time: 1000 / fps as usize
+        }
+    }
+}
+
+impl<'a> Sprite for AnimatedSprite<'a> {
+    fn update(&mut self, elapsed: usize) {
+        self.time += elapsed;
+
+        if self.time > self.frame_time {
+            self.frame += 1;
+            self.time = 0;
+
+            if self.frame < self.frames {
+                self.x += 16;
+            } else {
+                self.x -= 16 * (self.frames - 1) as i32;
+
+                self.frame = 0;
+            }
+        }
+    }
+
+    fn render(&self, renderer: &sdl2::render::Renderer, destination: &Rect) {
+        let _ = renderer.copy(self.texture, Some(Rect::new(self.x, self.y, 16, 16)), Some(*destination));
+    }
 }
 
 
@@ -60,33 +137,68 @@ fn main() {
         Err(err) => panic!("failed to create renderer: {}", err)
     };
 
-    let floor = Path::new("gfx/floor.png");
-
-    let surface = match sdl2_image::LoadSurface::from_file(&floor) {
+    let world_surface = match sdl2_image::LoadSurface::from_file(&Path::new("gfx/world.png")) {
         Ok(surface) => surface,
-        Err(err) => panic!(format!("failed to load png: {}", err))
+        Err(err) => panic!("failed to load png: {}", err)
     };
 
-    let texture = match renderer.create_texture_from_surface(&surface) {
+    let world_sprites = match renderer.create_texture_from_surface(&world_surface) {
         Ok(texture) => texture,
-        Err(err) => panic!(format!("failed to create surface: {}", err))
+        Err(err) => panic!("failed to create surface: {}", err)
     };
+
+    let player_surface = match sdl2_image::LoadSurface::from_file(&Path::new("gfx/mario.png")) {
+        Ok(surface) => surface,
+        Err(err) => panic!("failed to load png: {}", err)
+    };
+
+    let player_sprites = match renderer.create_texture_from_surface(&player_surface) {
+        Ok(texture) => texture,
+        Err(err) => panic!("failed to create surface: {}", err)
+    };
+
+    let mut player_sprite = AnimatedSprite::new(&player_sprites, 96, 32, 3, 15);
 
     let mut keyboard = KeyboardHandler::new();
 
-    let mut layer = Layer::new(120, 20, TILE_WIDTH, TILE_HEIGHT, Tile::Empty);
+    let mut layer = Layer::new(212, 20, TILE_WIDTH, TILE_HEIGHT, Tile::Empty);
 
-    let colors = vec![Color::RGB(0, 0, 255), Color::RGB(0, 128, 255)];
 
-    for x in range(5, 120) {
-        layer.set_tile(x, 14, Tile::Floor(colors[(x % 2) as usize]));
+    layer.set_tile(2, 15, Tile::Background(Rect::new(16 * 9, 16 * 8, 16, 16)));
+
+    layer.set_tile(1, 16, Tile::Background(Rect::new(16 * 8, 16 * 8, 16, 16)));
+    layer.set_tile(2, 16, Tile::Background(Rect::new(16 * 8, 16 * 9, 16, 16)));
+    layer.set_tile(3, 16, Tile::Background(Rect::new(16 * 10, 16 * 8, 16, 16)));
+
+    layer.set_tile(0, 17, Tile::Background(Rect::new(16 * 8, 16 * 8, 16, 16)));
+    layer.set_tile(1, 17, Tile::Background(Rect::new(16 * 8, 16 * 9, 16, 16)));
+    layer.set_tile(2, 17, Tile::Background(Rect::new(16 * 9, 16 * 9, 16, 16)));
+    layer.set_tile(3, 17, Tile::Background(Rect::new(16 * 8, 16 * 9, 16, 16)));
+    layer.set_tile(4, 17, Tile::Background(Rect::new(16 * 10, 16 * 8, 16, 16)));
+
+
+    layer.set_tile(11, 17, Tile::Background(Rect::new(16 * 11, 16 * 9, 16, 16)));
+    layer.set_tile(12, 17, Tile::Background(Rect::new(16 * 12, 16 * 9, 16, 16)));
+    layer.set_tile(13, 17, Tile::Background(Rect::new(16 * 12, 16 * 9, 16, 16)));
+    layer.set_tile(14, 17, Tile::Background(Rect::new(16 * 12, 16 * 9, 16, 16)));
+    layer.set_tile(15, 17, Tile::Background(Rect::new(16 * 13, 16 * 9, 16, 16)));
+
+
+    layer.set_tile(16, 14, Tile::Floor(Rect::new(16 * 24, 16 * 0, 16, 16)));
+
+
+    layer.set_tile(17, 16, Tile::Background(Rect::new(16 * 9, 16 * 8, 16, 16)));
+
+    layer.set_tile(16, 17, Tile::Background(Rect::new(16 * 8, 16 * 8, 16, 16)));
+    layer.set_tile(17, 17, Tile::Background(Rect::new(16 * 8, 16 * 9, 16, 16)));
+    layer.set_tile(18, 17, Tile::Background(Rect::new(16 * 10, 16 * 8, 16, 16)));
+
+
+    for x in range(0, 212) {
+        layer.set_tile(x, 18, Tile::Floor(Rect::new(16 * 0, 16 * 0, 16, 16)));
+        layer.set_tile(x, 19, Tile::Floor(Rect::new(16 * 0, 16 * 0, 16, 16)));
     }
-    for x in range(11, 20) {
-        layer.set_tile(x, 13, Tile::Floor(colors[(x % 2) as usize]));
-    }
-    for x in range(14, 20) {
-        layer.set_tile(x, 11, Tile::Floor(colors[(x % 2) as usize]));
-    }
+
 
     let mut camera = Camera::new(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, layer.to_rect());
 
@@ -185,8 +297,8 @@ fn main() {
 
                             if let Some(tile) = layer.get_tile(x, y) {
                                 d = match *tile {
-                                    Tile::Empty => d,
-                                    Tile::Floor(_) => d.min(t)
+                                    Tile::Floor(_) => d.min(t),
+                                    _ => d
                                 }
                             } else {
                                 break;
@@ -220,8 +332,8 @@ fn main() {
 
                             if let Some(tile) = layer.get_tile(x, y) {
                                 d = match *tile {
-                                    Tile::Empty => d,
-                                    Tile::Floor(_) => d.max(t)
+                                    Tile::Floor(_) => d.max(t),
+                                    _ => d
                                 }
                             } else {
                                 break;
@@ -257,8 +369,8 @@ fn main() {
 
                             if let Some(tile) = layer.get_tile(x, y) {
                                 d = match *tile {
-                                    Tile::Empty => d,
-                                    Tile::Floor(_) => d.min(t)
+                                    Tile::Floor(_) => d.min(t),
+                                    _ => d
                                 }
                             } else {
                                 break;
@@ -296,8 +408,8 @@ fn main() {
 
                             if let Some(tile) = layer.get_tile(x, y) {
                                 d = match *tile {
-                                    Tile::Empty => d,
-                                    Tile::Floor(_) => d.max(t)
+                                    Tile::Floor(_) => d.max(t),
+                                    _ => d
                                 }
                             } else {
                                 break;
@@ -318,6 +430,8 @@ fn main() {
                 }
             }
 
+            player_sprite.update(elapsed);
+
             camera.center(&player.to_rect());
 
             lag -= MS_PER_UPDATE;
@@ -331,19 +445,18 @@ fn main() {
 
             match *tile {
                 Tile::Empty => (),
-                Tile::Floor(color) => {
-                    let _ = renderer.set_draw_color(color);
-                    let _ = renderer.fill_rect(&object);
+                Tile::Background(src) => {
+                    let _ = renderer.copy(&world_sprites, Some(src), Some(object));
+                }
+                Tile::Floor(src) => {
+                    let _ = renderer.copy(&world_sprites, Some(src), Some(object));
                 }
             }
         });
 
         let player_rect = camera_relative_rect(&camera.to_rect(), &player.to_rect());
 
-        let _ = renderer.set_draw_color(Color::RGB(0, 255, 0));
-        let _ = renderer.fill_rect(&player_rect);
-
-        let _ = renderer.copy(&texture, None, Some(Rect::new(0, 0, 32, 32)));
+        player_sprite.render(&renderer, &player_rect);
 
         renderer.present();
 

@@ -120,6 +120,72 @@ fn main() {
     layer.set_tile(18, 17, Tile::Background(Rect::new(16 * 10, 16 * 8, 16, 16)));
 
 
+    layer.set_tile(20, 14, Tile::Floor(Rect::new(16 * 1, 16 * 0, 16, 16)));
+    layer.set_tile(21, 14, Tile::Floor(Rect::new(16 * 24, 16 * 0, 16, 16)));
+    layer.set_tile(22, 14, Tile::Floor(Rect::new(16 * 1, 16 * 0, 16, 16)));
+    layer.set_tile(23, 14, Tile::Floor(Rect::new(16 * 24, 16 * 0, 16, 16)));
+    layer.set_tile(24, 14, Tile::Floor(Rect::new(16 * 1, 16 * 0, 16, 16)));
+
+
+    layer.set_tile(22, 10, Tile::Floor(Rect::new(16 * 24, 16 * 0, 16, 16)));
+
+
+    layer.set_tile(19, 7, Tile::Floor(Rect::new(16 * 0, 16 * 20, 16, 16)));
+    layer.set_tile(20, 7, Tile::Floor(Rect::new(16 * 1, 16 * 20, 16, 16)));
+    layer.set_tile(21, 7, Tile::Floor(Rect::new(16 * 2, 16 * 20, 16, 16)));
+    layer.set_tile(19, 8, Tile::Floor(Rect::new(16 * 0, 16 * 21, 16, 16)));
+    layer.set_tile(20, 8, Tile::Floor(Rect::new(16 * 1, 16 * 21, 16, 16)));
+    layer.set_tile(21, 8, Tile::Floor(Rect::new(16 * 2, 16 * 21, 16, 16)));
+
+
+    layer.set_tile(23, 17, Tile::Background(Rect::new(16 * 11, 16 * 9, 16, 16)));
+    layer.set_tile(24, 17, Tile::Background(Rect::new(16 * 12, 16 * 9, 16, 16)));
+    layer.set_tile(25, 17, Tile::Background(Rect::new(16 * 13, 16 * 9, 16, 16)));
+
+
+    layer.set_tile(28, 16, Tile::Floor(Rect::new(16 * 0, 16 * 8, 16, 16)));
+    layer.set_tile(29, 16, Tile::Floor(Rect::new(16 * 1, 16 * 8, 16, 16)));
+    layer.set_tile(28, 17, Tile::Floor(Rect::new(16 * 0, 16 * 9, 16, 16)));
+    layer.set_tile(29, 17, Tile::Floor(Rect::new(16 * 1, 16 * 9, 16, 16)));
+
+
+    layer.set_tile(38, 15, Tile::Floor(Rect::new(16 * 0, 16 * 8, 16, 16)));
+    layer.set_tile(39, 15, Tile::Floor(Rect::new(16 * 1, 16 * 8, 16, 16)));
+    layer.set_tile(38, 16, Tile::Floor(Rect::new(16 * 0, 16 * 9, 16, 16)));
+    layer.set_tile(39, 16, Tile::Floor(Rect::new(16 * 1, 16 * 9, 16, 16)));
+    layer.set_tile(38, 17, Tile::Floor(Rect::new(16 * 0, 16 * 9, 16, 16)));
+    layer.set_tile(39, 17, Tile::Floor(Rect::new(16 * 1, 16 * 9, 16, 16)));
+
+
+    layer.set_tile(41, 17, Tile::Background(Rect::new(16 * 11, 16 * 9, 16, 16)));
+    layer.set_tile(42, 17, Tile::Background(Rect::new(16 * 12, 16 * 9, 16, 16)));
+    layer.set_tile(43, 17, Tile::Background(Rect::new(16 * 12, 16 * 9, 16, 16)));
+    layer.set_tile(44, 17, Tile::Background(Rect::new(16 * 13, 16 * 9, 16, 16)));
+
+
+    layer.set_tile(46, 14, Tile::Floor(Rect::new(16 * 0, 16 * 8, 16, 16)));
+    layer.set_tile(47, 14, Tile::Floor(Rect::new(16 * 1, 16 * 8, 16, 16)));
+    layer.set_tile(46, 15, Tile::Floor(Rect::new(16 * 0, 16 * 9, 16, 16)));
+    layer.set_tile(47, 15, Tile::Floor(Rect::new(16 * 1, 16 * 9, 16, 16)));
+    layer.set_tile(46, 16, Tile::Floor(Rect::new(16 * 0, 16 * 9, 16, 16)));
+    layer.set_tile(47, 16, Tile::Floor(Rect::new(16 * 1, 16 * 9, 16, 16)));
+    layer.set_tile(46, 17, Tile::Floor(Rect::new(16 * 0, 16 * 9, 16, 16)));
+    layer.set_tile(47, 17, Tile::Floor(Rect::new(16 * 1, 16 * 9, 16, 16)));
+
+
+    layer.set_tile(50, 15, Tile::Background(Rect::new(16 * 9, 16 * 8, 16, 16)));
+
+    layer.set_tile(49, 16, Tile::Background(Rect::new(16 * 8, 16 * 8, 16, 16)));
+    layer.set_tile(50, 16, Tile::Background(Rect::new(16 * 8, 16 * 9, 16, 16)));
+    layer.set_tile(51, 16, Tile::Background(Rect::new(16 * 10, 16 * 8, 16, 16)));
+
+    layer.set_tile(48, 17, Tile::Background(Rect::new(16 * 8, 16 * 8, 16, 16)));
+    layer.set_tile(49, 17, Tile::Background(Rect::new(16 * 8, 16 * 9, 16, 16)));
+    layer.set_tile(50, 17, Tile::Background(Rect::new(16 * 9, 16 * 9, 16, 16)));
+    layer.set_tile(51, 17, Tile::Background(Rect::new(16 * 8, 16 * 9, 16, 16)));
+    layer.set_tile(52, 17, Tile::Background(Rect::new(16 * 10, 16 * 8, 16, 16)));
+
+
     for x in range(0, 212) {
         layer.set_tile(x, 18, Tile::Floor(Rect::new(16 * 0, 16 * 0, 16, 16)));
         layer.set_tile(x, 19, Tile::Floor(Rect::new(16 * 0, 16 * 0, 16, 16)));
@@ -363,7 +429,7 @@ fn main() {
             lag -= MS_PER_UPDATE;
         }
 
-        let _ = renderer.set_draw_color(Color::RGB(0, 0, 0));
+        let _ = renderer.set_draw_color(Color::RGB(93, 148, 251));
         let _ = renderer.clear();
 
         layer.for_each_intersecting(&camera.to_rect(), |tile: &Tile, position: &Rect| {

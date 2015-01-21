@@ -26,7 +26,7 @@ impl<'a> StaticSprite<'a> {
 
 impl<'a> Sprite for StaticSprite<'a> {
     fn render(&self, renderer: &Renderer, destination: &Rect) {
-        let _ = renderer.copy(self.texture, Some(Rect::new(80 + (16 * self.x), 16 * self.y, 16, 16)), Some(*destination));
+        let _ = renderer.copy(self.texture, Some(Rect::new(self.x, self.y, 16, 16)), Some(*destination));
     }
 }
 

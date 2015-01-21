@@ -42,8 +42,10 @@ const PLAYER_ACCELERATION_X_CHANGE : f32 = 0.06;
 
 
 #[derive(Clone)]
-enum Tile {
+enum Tile<'a> {
     Empty,
+    Static(&'a StaticSprite<'a>, bool),
+
     Background(Rect),
     Floor(Rect)
 }
@@ -72,6 +74,9 @@ fn main() {
         Ok(texture) => texture,
         Err(err) => panic!("failed to create surface: {}", err)
     };
+
+    let floor_sprite = StaticSprite::new(&world_sprites, 16 * 0, 16 * 0);
+    let brick_sprite = StaticSprite::new(&world_sprites, 16 * 1, 16 * 0);
 
     let player_surface = match sdl2_image::LoadSurface::from_file(&Path::new("gfx/mario.png")) {
         Ok(surface) => surface,
@@ -120,11 +125,11 @@ fn main() {
     layer.set_tile(18, 17, Tile::Background(Rect::new(16 * 10, 16 * 8, 16, 16)));
 
 
-    layer.set_tile(20, 14, Tile::Floor(Rect::new(16 * 1, 16 * 0, 16, 16)));
+    layer.set_tile(20, 14, Tile::Static(&brick_sprite, true));
     layer.set_tile(21, 14, Tile::Floor(Rect::new(16 * 24, 16 * 0, 16, 16)));
-    layer.set_tile(22, 14, Tile::Floor(Rect::new(16 * 1, 16 * 0, 16, 16)));
+    layer.set_tile(22, 14, Tile::Static(&brick_sprite, true));
     layer.set_tile(23, 14, Tile::Floor(Rect::new(16 * 24, 16 * 0, 16, 16)));
-    layer.set_tile(24, 14, Tile::Floor(Rect::new(16 * 1, 16 * 0, 16, 16)));
+    layer.set_tile(24, 14, Tile::Static(&brick_sprite, true));
 
 
     layer.set_tile(22, 10, Tile::Floor(Rect::new(16 * 24, 16 * 0, 16, 16)));
@@ -187,8 +192,8 @@ fn main() {
 
 
     for x in range(0, 212) {
-        layer.set_tile(x, 18, Tile::Floor(Rect::new(16 * 0, 16 * 0, 16, 16)));
-        layer.set_tile(x, 19, Tile::Floor(Rect::new(16 * 0, 16 * 0, 16, 16)));
+        layer.set_tile(x, 18, Tile::Static(&floor_sprite, true));
+        layer.set_tile(x, 19, Tile::Static(&floor_sprite, true));
     }
 
 
@@ -290,6 +295,7 @@ fn main() {
                             if let Some(tile) = layer.get_tile(x, y) {
                                 d = match *tile {
                                     Tile::Floor(_) => d.min(t),
+                                    Tile::Static(_, solid) => if solid { d.min(t) } else { d },
                                     _ => d
                                 }
                             } else {
@@ -325,6 +331,7 @@ fn main() {
                             if let Some(tile) = layer.get_tile(x, y) {
                                 d = match *tile {
                                     Tile::Floor(_) => d.max(t),
+                                    Tile::Static(_, solid) => if solid { d.max(t) } else { d },
                                     _ => d
                                 }
                             } else {
@@ -362,6 +369,7 @@ fn main() {
                             if let Some(tile) = layer.get_tile(x, y) {
                                 d = match *tile {
                                     Tile::Floor(_) => d.min(t),
+                                    Tile::Static(_, solid) => if solid { d.min(t) } else { d },
                                     _ => d
                                 }
                             } else {
@@ -401,6 +409,7 @@ fn main() {
                             if let Some(tile) = layer.get_tile(x, y) {
                                 d = match *tile {
                                     Tile::Floor(_) => d.max(t),
+                                    Tile::Static(_, solid) => if solid { d.max(t) } else { d },
                                     _ => d
                                 }
                             } else {
@@ -436,13 +445,14 @@ fn main() {
             let object = camera_relative_rect(&camera.to_rect(), position);
 
             match *tile {
-                Tile::Empty => (),
                 Tile::Background(src) => {
                     let _ = renderer.copy(&world_sprites, Some(src), Some(object));
-                }
+                },
                 Tile::Floor(src) => {
                     let _ = renderer.copy(&world_sprites, Some(src), Some(object));
-                }
+                },
+                Tile::Static(ref sprite, _) => sprite.render(&renderer, &object),
+                _ => ()
             }
         });
 

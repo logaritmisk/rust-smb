@@ -58,8 +58,8 @@ impl<T> Layer<T> where T: Clone {
 
     pub fn for_each_intersecting<F: FnMut(&T, &Rect)>(&self, rect: &Rect, mut f: F) {
         if let Some(intersect) = self.find_intersecting(rect) {
-            for y in range(intersect.y, intersect.y + intersect.h + 1) {
-                for x in range(intersect.x, intersect.x + intersect.w + 1) {
+            for y in intersect.y..intersect.y + intersect.h + 1 {
+                for x in intersect.x..intersect.x + intersect.w + 1 {
                     let position = Rect::new(x * self.tile_width, y * self.tile_height, self.tile_width, self.tile_height);
 
                     f(self.get_tile(x, y).unwrap(), &position);

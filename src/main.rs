@@ -3,6 +3,7 @@ extern crate sdl2_image;
 
 
 use std::num::Float;
+use std::path::Path;
 
 use sdl2::video::{Window, WindowPos, OPENGL};
 use sdl2::timer::{get_ticks, delay};
@@ -30,7 +31,7 @@ const SCREEN_HEIGHT : i32 = 640;
 const TILE_WIDTH : i32 = 32;
 const TILE_HEIGHT : i32 = 32;
 
-const MS_PER_UPDATE : usize = 10;
+const MS_PER_UPDATE : u32 = 10;
 
 const PLAYER_SPEED_X : f32 = 4.0;
 const PLAYER_THRESHOLD_X : f32 = 0.2;
@@ -51,10 +52,11 @@ enum Tile<'a> {
 
 
 fn main() {
-    sdl2::init(sdl2::INIT_EVERYTHING);
+    let sdl_context = sdl2::init(sdl2::INIT_EVERYTHING).unwrap();
+
     sdl2_image::init(sdl2_image::INIT_PNG);
 
-    let window = match Window::new("Super Matte Bros", WindowPos::PosCentered, WindowPos::PosCentered, SCREEN_WIDTH as isize, SCREEN_HEIGHT as isize, OPENGL) {
+    let window = match Window::new("Super Matte Bros", WindowPos::PosCentered, WindowPos::PosCentered, SCREEN_WIDTH, SCREEN_HEIGHT, OPENGL) {
         Ok(window) => window,
         Err(err) => panic!("failed to create window: {}", err)
     };
@@ -190,7 +192,7 @@ fn main() {
     layer.set_tile(52, 17, Tile::Background(Rect::new(16 * 10, 16 * 8, 16, 16)));
 
 
-    for x in range(0, 212) {
+    for x in 0..212 {
         layer.set_tile(x, 18, Tile::Static(&floor_sprite, true));
         layer.set_tile(x, 19, Tile::Static(&floor_sprite, true));
     }
@@ -200,11 +202,12 @@ fn main() {
 
     let mut player = Player::new(390.0, 390.0);
 
-    let mut current : usize;
-    let mut elapsed : usize;
-    let mut previous : usize = get_ticks();
-    let mut lag : usize = 0;
+    let mut current : u32;
+    let mut elapsed : u32;
+    let mut previous : u32 = get_ticks();
+    let mut lag : u32 = 0;
 
+    let mut drawer = renderer.drawer();
     let mut event_pump = sdl_context.event_pump();
 
     'main : loop {
@@ -215,23 +218,20 @@ fn main() {
 
         keyboard.clear();
 
-        'event : loop {
-            for event in event_pump.poll_iter() {
-                use sdl2::event::Event;
+        for event in event_pump.poll_iter() {
+            use sdl2::event::Event;
 
-                match event {
-                    Event::Quit(_) => break 'main,
-                    Event::KeyDown(_, _, key, _, _, repeat) => {
-                        if repeat == false {
-                            keyboard.key_down(key);
-                        }
-                    },
-                    Event::KeyUp(_, _, key, _, _, _) => {
-                        keyboard.key_up(key);
-                    },
-                    Event::None => break 'event,
-                    _ => (),
-                }
+            match event {
+                Event::Quit {..} => break 'main,
+                Event::KeyDown {keycode, repeat, ..} => {
+                    if repeat == false {
+                        keyboard.key_down(keycode);
+                    }
+                },
+                Event::KeyUp {keycode, ..} => {
+                    keyboard.key_up(keycode);
+                },
+                _ => (),
             }
         }
 
@@ -287,7 +287,7 @@ fn main() {
                     let p = player.x + player.w as f32;
                     let mut d = player.dx;
 
-                    for y in range(intersect.y, intersect.y + intersect.h + 1) {
+                    for y in intersect.y..intersect.y + intersect.h + 1 {
                         let mut x = intersect.x;
 
                         loop {
@@ -323,7 +323,7 @@ fn main() {
                     let p = player.x;
                     let mut d = player.dx;
 
-                    for y in range(intersect.y, intersect.y + intersect.h + 1) {
+                    for y in intersect.y..intersect.y + intersect.h + 1 {
                         let mut x = intersect.x;
 
                         loop {
@@ -361,7 +361,7 @@ fn main() {
                     let p = player.y + player.h as f32;
                     let mut d = player.dy;
 
-                    for x in range(intersect.x, intersect.x + intersect.w + 1) {
+                    for x in intersect.x..intersect.x + intersect.w + 1 {
                         let mut y = intersect.y;
 
                         loop {
@@ -401,7 +401,7 @@ fn main() {
                     let p = player.y;
                     let mut d = player.dy;
 
-                    for x in range(intersect.x, intersect.x + intersect.w + 1) {
+                    for x in intersect.x..intersect.x + intersect.w + 1 {
                         let mut y = intersect.y;
 
                         loop {
@@ -443,35 +443,34 @@ fn main() {
             lag -= MS_PER_UPDATE;
         }
 
-        let _ = renderer.set_draw_color(Color::RGB(93, 148, 251));
-        let _ = renderer.clear();
+        drawer.set_draw_color(Color::RGB(93, 148, 251));
+        drawer.clear();
 
         layer.for_each_intersecting(&camera.to_rect(), |tile: &Tile, position: &Rect| {
             let object = camera_relative_rect(&camera.to_rect(), position);
 
             match *tile {
                 Tile::Background(src) => {
-                    let _ = renderer.copy(&world_sprites, Some(src), Some(object));
+                    let _ = drawer.copy(&world_sprites, Some(src), Some(object));
                 },
                 Tile::Floor(src) => {
-                    let _ = renderer.copy(&world_sprites, Some(src), Some(object));
+                    let _ = drawer.copy(&world_sprites, Some(src), Some(object));
                 },
-                Tile::Static(ref sprite, _) => sprite.render(&renderer, &object),
+                Tile::Static(ref sprite, _) => sprite.render(&mut drawer, &object),
                 _ => ()
             }
         });
 
         let player_rect = camera_relative_rect(&camera.to_rect(), &player.to_rect());
 
-        player_sprite.render(&renderer, &player_rect);
+        player_sprite.render(&mut drawer, &player_rect);
 
-        renderer.present();
+        drawer.present();
 
         delay(5);
     }
 
     sdl2_image::quit();
-    sdl2::quit();
 }
 
 fn camera_relative_rect(camera: &Rect, other: &Rect) -> Rect {

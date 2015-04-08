@@ -1,15 +1,15 @@
-use sdl2::render::{Texture, Renderer};
+use sdl2::render::{Texture, RenderDrawer};
 use sdl2::rect::Rect;
 
 
 pub trait Sprite {
-    fn update(&mut self, usize) {}
-    fn render(&self, &Renderer, &Rect);
+    fn update(&mut self, u32) {}
+    fn render(&self, &mut RenderDrawer, &Rect);
 }
 
 
 pub struct StaticSprite<'a> {
-    texture: &'a Texture,
+    texture: &'a Texture<'a>,
     x: i32,
     y: i32
 }
@@ -25,20 +25,20 @@ impl<'a> StaticSprite<'a> {
 }
 
 impl<'a> Sprite for StaticSprite<'a> {
-    fn render(&self, renderer: &Renderer, destination: &Rect) {
-        let _ = renderer.copy(self.texture, Some(Rect::new(self.x, self.y, 16, 16)), Some(*destination));
+    fn render(&self, drawer: &mut RenderDrawer, destination: &Rect) {
+        drawer.copy(self.texture, Some(Rect::new(self.x, self.y, 16, 16)), Some(*destination));
     }
 }
 
 
 pub struct AnimatedSprite<'a> {
-    texture: &'a Texture,
+    texture: &'a Texture<'a>,
     x: i32,
     y: i32,
     frame: i32,
     frames: i32,
-    time: usize,
-    frame_time: usize
+    time: u32,
+    frame_time: u32
 }
 
 impl<'a> AnimatedSprite<'a> {
@@ -50,13 +50,13 @@ impl<'a> AnimatedSprite<'a> {
             frame: 0,
             frames: frames,
             time: 0,
-            frame_time: 1000 / fps as usize
+            frame_time: 1000 / fps as u32
         }
     }
 }
 
 impl<'a> Sprite for AnimatedSprite<'a> {
-    fn update(&mut self, elapsed: usize) {
+    fn update(&mut self, elapsed: u32) {
         self.time += elapsed;
 
         if self.time > self.frame_time {
@@ -73,7 +73,7 @@ impl<'a> Sprite for AnimatedSprite<'a> {
         }
     }
 
-    fn render(&self, renderer: &Renderer, destination: &Rect) {
-        let _ = renderer.copy(self.texture, Some(Rect::new(self.x, self.y, 16, 16)), Some(*destination));
+    fn render(&self, drawer: &mut RenderDrawer, destination: &Rect) {
+        drawer.copy(self.texture, Some(Rect::new(self.x, self.y, 16, 16)), Some(*destination));
     }
 }

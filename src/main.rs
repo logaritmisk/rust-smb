@@ -5,7 +5,6 @@ extern crate sdl2_image;
 use std::num::Float;
 
 use sdl2::video::{Window, WindowPos, OPENGL};
-use sdl2::event::{poll_event, Event};
 use sdl2::timer::{get_ticks, delay};
 use sdl2::rect::Rect;
 use sdl2::keycode::KeyCode;
@@ -206,6 +205,8 @@ fn main() {
     let mut previous : usize = get_ticks();
     let mut lag : usize = 0;
 
+    let mut event_pump = sdl_context.event_pump();
+
     'main : loop {
         current = get_ticks();
         elapsed = current - previous;
@@ -215,18 +216,22 @@ fn main() {
         keyboard.clear();
 
         'event : loop {
-            match poll_event() {
-                Event::Quit(_) => break 'main,
-                Event::KeyDown(_, _, key, _, _, repeat) => {
-                    if repeat == false {
-                        keyboard.key_down(key);
-                    }
-                },
-                Event::KeyUp(_, _, key, _, _, _) => {
-                    keyboard.key_up(key);
-                },
-                Event::None => break 'event,
-                _ => (),
+            for event in event_pump.poll_iter() {
+                use sdl2::event::Event;
+
+                match event {
+                    Event::Quit(_) => break 'main,
+                    Event::KeyDown(_, _, key, _, _, repeat) => {
+                        if repeat == false {
+                            keyboard.key_down(key);
+                        }
+                    },
+                    Event::KeyUp(_, _, key, _, _, _) => {
+                        keyboard.key_up(key);
+                    },
+                    Event::None => break 'event,
+                    _ => (),
+                }
             }
         }
 

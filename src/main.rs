@@ -2,7 +2,6 @@ extern crate sdl2;
 extern crate sdl2_image;
 
 
-use std::num::Float;
 use std::path::Path;
 
 use sdl2::video::{Window, WindowPos, OPENGL};

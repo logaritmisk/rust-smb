@@ -4,10 +4,8 @@ version = "0.0.1"
 authors = ["logaritmisk <anders.e.olsson@gmail.com>"]
 
 [dependencies]
-sdl2 = "0.1.0"
-
-[dependencies.sdl2_image]
-git = "https://github.com/logaritmisk/rust-sdl2_image"
+sdl2 = "0.2.1"
+sdl2_image = "0.2.1"
 
 [[bin]]
 name = "super-matte-bros"

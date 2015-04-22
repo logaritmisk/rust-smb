@@ -9,7 +9,7 @@ pub trait Sprite {
 
 
 pub struct StaticSprite<'a> {
-    texture: &'a Texture<'a>,
+    texture: &'a Texture,
     x: i32,
     y: i32
 }
@@ -32,7 +32,7 @@ impl<'a> Sprite for StaticSprite<'a> {
 
 
 pub struct AnimatedSprite<'a> {
-    texture: &'a Texture<'a>,
+    texture: &'a Texture,
     x: i32,
     y: i32,
     frame: i32,

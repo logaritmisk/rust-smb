@@ -4,8 +4,8 @@ use sdl2::rect::Rect;
 pub struct Player {
     pub x: f32,
     pub y: f32,
-    pub w: i32,
-    pub h: i32,
+    pub w: u32,
+    pub h: u32,
     pub dx: f32,
     pub dy: f32,
     pub gravity: f32,
@@ -37,6 +37,6 @@ impl Player {
     }
 
     pub fn to_rect(&self) -> Rect {
-        Rect::new(self.x as i32, self.y as i32, self.w, self.h)
+        Rect::new_unwrap(self.x as i32, self.y as i32, self.w, self.h)
     }
 }

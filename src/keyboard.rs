@@ -1,12 +1,12 @@
 use std::collections::HashMap;
 
-use sdl2::keycode::KeyCode;
+use sdl2::keyboard::Keycode;
 
 
 pub struct KeyboardHandler {
-    pressed_keys: HashMap<KeyCode, bool>,
-    released_keys: HashMap<KeyCode, bool>,
-    held_keys: HashMap<KeyCode, bool>
+    pressed_keys: HashMap<Keycode, bool>,
+    released_keys: HashMap<Keycode, bool>,
+    held_keys: HashMap<Keycode, bool>
 }
 
 impl KeyboardHandler {
@@ -23,31 +23,31 @@ impl KeyboardHandler {
         self.released_keys.clear();
     }
 
-    pub fn key_down(&mut self, keycode: KeyCode) {
+    pub fn key_down(&mut self, keycode: Keycode) {
         self.pressed_keys.insert(keycode, true);
         self.held_keys.insert(keycode, true);
     }
 
-    pub fn key_up(&mut self, keycode: KeyCode) {
+    pub fn key_up(&mut self, keycode: Keycode) {
         self.released_keys.insert(keycode, true);
         self.held_keys.insert(keycode, false);
     }
 
-    pub fn was_pressed(&self, keycode: KeyCode) -> bool {
+    pub fn was_pressed(&self, keycode: Keycode) -> bool {
         match self.pressed_keys.get(&keycode) {
             Some(state) => *state,
             None => false
         }
     }
 
-    pub fn was_released(&self, keycode: KeyCode) -> bool {
+    pub fn was_released(&self, keycode: Keycode) -> bool {
         match self.released_keys.get(&keycode) {
             Some(state) => *state,
             None => false
         }
     }
 
-    pub fn is_held(&self, keycode: KeyCode) -> bool {
+    pub fn is_held(&self, keycode: Keycode) -> bool {
         match self.held_keys.get(&keycode) {
             Some(state) => *state,
             None => false

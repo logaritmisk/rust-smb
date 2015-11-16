@@ -1,10 +1,10 @@
-use sdl2::render::{Texture, RenderDrawer};
+use sdl2::render::{Texture, Renderer};
 use sdl2::rect::Rect;
 
 
 pub trait Sprite {
-    fn update(&mut self, u32) {}
-    fn render(&self, &mut RenderDrawer, &Rect);
+    fn update(&mut self, u64) {}
+    fn render(&self, &mut Renderer, &Rect);
 }
 
 
@@ -25,8 +25,8 @@ impl<'a> StaticSprite<'a> {
 }
 
 impl<'a> Sprite for StaticSprite<'a> {
-    fn render(&self, drawer: &mut RenderDrawer, destination: &Rect) {
-        drawer.copy(self.texture, Some(Rect::new(self.x, self.y, 16, 16)), Some(*destination));
+    fn render(&self, drawer: &mut Renderer, destination: &Rect) {
+        drawer.copy(self.texture, Some(Rect::new_unwrap(self.x, self.y, 16, 16)), Some(*destination));
     }
 }
 
@@ -35,14 +35,14 @@ pub struct AnimatedSprite<'a> {
     texture: &'a Texture,
     x: i32,
     y: i32,
-    frame: i32,
-    frames: i32,
-    time: u32,
-    frame_time: u32
+    frame: u32,
+    frames: u32,
+    time: u64,
+    frame_time: u64
 }
 
 impl<'a> AnimatedSprite<'a> {
-    pub fn new(texture: &'a Texture, x: i32, y: i32, frames: i32, fps: i32) -> AnimatedSprite<'a> {
+    pub fn new(texture: &'a Texture, x: i32, y: i32, frames: u32, fps: u32) -> AnimatedSprite<'a> {
         AnimatedSprite {
             texture: texture,
             x: x,
@@ -50,13 +50,13 @@ impl<'a> AnimatedSprite<'a> {
             frame: 0,
             frames: frames,
             time: 0,
-            frame_time: 1000 / fps as u32
+            frame_time: 1000 / fps as u64
         }
     }
 }
 
 impl<'a> Sprite for AnimatedSprite<'a> {
-    fn update(&mut self, elapsed: u32) {
+    fn update(&mut self, elapsed: u64) {
         self.time += elapsed;
 
         if self.time > self.frame_time {
@@ -73,7 +73,7 @@ impl<'a> Sprite for AnimatedSprite<'a> {
         }
     }
 
-    fn render(&self, drawer: &mut RenderDrawer, destination: &Rect) {
-        drawer.copy(self.texture, Some(Rect::new(self.x, self.y, 16, 16)), Some(*destination));
+    fn render(&self, drawer: &mut Renderer, destination: &Rect) {
+        drawer.copy(self.texture, Some(Rect::new_unwrap(self.x, self.y, 16, 16)), Some(*destination));
     }
 }

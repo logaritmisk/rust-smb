@@ -267,10 +267,10 @@ fn main() {
             let py = player.y + player.h as f32;
             let mut dy = player.dy;
 
-            if let Some((a, b)) = layer.find_intersecting(&player.to_rect()) {
+            if let Some(intersect) = layer.find_intersecting(&player.to_rect()) {
                 if player.dx > 0.0 {
-                    for y in a.y()..b.y() + 1 {
-                        let mut x = a.x();
+                    for y in intersect.y()..intersect.height() as i32 + 1 {
+                        let mut x = intersect.x();
 
                         loop {
                             let t = (x * TILE_WIDTH as i32) as f32 - px;
@@ -297,8 +297,8 @@ fn main() {
                         player.dx = 0.0;
                     }
                 } else if player.dx < 0.0 {
-                    for y in a.y()..b.y() + 1 {
-                        let mut x = a.x();
+                    for y in intersect.y()..intersect.height() as i32 + 1 {
+                        let mut x = intersect.x();
 
                         loop {
                             let t = (x * TILE_WIDTH as i32 + TILE_WIDTH as i32) as f32 - px;
@@ -327,8 +327,8 @@ fn main() {
                 }
 
                 if player.dy > 0.0 {
-                    for x in a.x()..b.x() + 1 {
-                        let mut y = a.y();
+                    for x in intersect.x()..intersect.width() as i32 + 1 {
+                        let mut y = intersect.y();
 
                         loop {
                             let t = (y * TILE_HEIGHT as i32) as f32 - py;
@@ -356,8 +356,8 @@ fn main() {
                         player.on_ground = true;
                     }
                 } else if player.dy < 0.0 {
-                    for x in a.x()..b.x() + 1 {
-                        let mut y = a.y();
+                    for x in intersect.x()..intersect.width() as i32 + 1 {
+                        let mut y = intersect.y();
 
                         loop {
                             let t = (y * TILE_HEIGHT as i32 + TILE_HEIGHT as i32) as f32 - py;

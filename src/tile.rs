@@ -1,7 +1,7 @@
 use std::iter::repeat;
 use std::cmp::{min, max};
 
-use sdl2::rect::Rect;
+use sdl2::rect::{Rect, Point};
 
 
 pub struct Layer<T> {
@@ -39,7 +39,7 @@ impl<T> Layer<T> where T: Clone {
         self.tiles[offset] = tile;
     }
 
-    pub fn find_intersecting(&self, rect: &Rect) -> Option<Rect> {
+    pub fn find_intersecting(&self, rect: &Rect) -> Option<(Point, Point)> {
         let x1 = max(rect.x() / self.tile_width as i32, 0);
         let y1 = max(rect.y() / self.tile_height as i32, 0);
         let x2 = min((rect.x() + rect.width() as i32 - 1) / self.tile_width as i32, self.width as i32 - 1);
@@ -51,18 +51,15 @@ impl<T> Layer<T> where T: Clone {
         else if y1 < 0 || y2 >= self.height as i32 {
             None
         }
-        else if x2 - x1 <= 0 || y2 - y1 <= 0 {
-            None
-        }
         else {
-            Some(Rect::new_unwrap(x1, y1, (x2 - x1) as u32, (y2 - y1) as u32))
+            Some((Point::new(x1, y1), Point::new(x2, y2)))
         }
     }
 
     pub fn for_each_intersecting<F: FnMut(&T, &Rect)>(&self, rect: &Rect, mut f: F) {
-        if let Some(intersect) = self.find_intersecting(rect) {
-            for y in intersect.y()..intersect.y() + intersect.height() as i32 + 1 {
-                for x in intersect.x()..intersect.x() + intersect.width() as i32 + 1 {
+        if let Some((a, b)) = self.find_intersecting(rect) {
+            for y in a.y()..b.y() + 1 {
+                for x in a.x()..b.x() + 1 {
                     let position = Rect::new_unwrap(x * self.tile_width as i32, y * self.tile_height as i32, self.tile_width, self.tile_height);
 
                     f(self.get_tile(x, y).unwrap(), &position);

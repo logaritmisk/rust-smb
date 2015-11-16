@@ -184,13 +184,13 @@ fn main() {
 
     let mut current : u64;
     let mut elapsed : u64;
-    let mut previous : u64 = time::precise_time_ns();
+    let mut previous : u64 = time::precise_time_ns() / 1_000_000;
     let mut lag : u64 = 0;
 
     let mut event_pump = sdl_context.event_pump().unwrap();
 
     'main : loop {
-        current = time::precise_time_ns();
+        current = time::precise_time_ns() / 1_000_000;
         elapsed = current - previous;
         previous = current;
         lag += elapsed;
@@ -261,26 +261,29 @@ fn main() {
 
             player.on_ground = false;
 
-            if let Some(intersect) = layer.find_intersecting(&player.to_rect()) {
-                if player.dx > 0.0 {
-                    let p = player.x + player.w as f32;
-                    let mut d = player.dx;
+            let px = player.x + player.w as f32;
+            let mut dx = player.dx;
 
-                    for y in intersect.y()..intersect.y() + intersect.height() as i32 + 1 {
-                        let mut x = intersect.x();
+            let py = player.y + player.h as f32;
+            let mut dy = player.dy;
+
+            if let Some((a, b)) = layer.find_intersecting(&player.to_rect()) {
+                if player.dx > 0.0 {
+                    for y in a.y()..b.y() + 1 {
+                        let mut x = a.x();
 
                         loop {
-                            let t = (x * TILE_WIDTH as i32) as f32 - p;
+                            let t = (x * TILE_WIDTH as i32) as f32 - px;
 
-                            if t > d {
+                            if t > dx {
                                 break;
                             }
 
                             if let Some(tile) = layer.get_tile(x, y) {
-                                d = match *tile {
-                                    Tile::Floor(_) => d.min(t),
-                                    Tile::Static(_, solid) => if solid { d.min(t) } else { d },
-                                    _ => d
+                                dx = match *tile {
+                                    Tile::Floor(_) => dx.min(t),
+                                    Tile::Static(_, solid) => if solid { dx.min(t) } else { dx },
+                                    _ => dx
                                 }
                             } else {
                                 break;
@@ -290,33 +293,25 @@ fn main() {
                         }
                     }
 
-                    if d > 0.0 {
-                        player.x += d;
-                    } else if d < 0.0 {
-                        player.x += d;
-                        player.dx = 0.0;
-                    } else {
+                    if dx <= 0.0 {
                         player.dx = 0.0;
                     }
                 } else if player.dx < 0.0 {
-                    let p = player.x;
-                    let mut d = player.dx;
-
-                    for y in intersect.y()..intersect.y() + intersect.height() as i32 + 1 {
-                        let mut x = intersect.x();
+                    for y in a.y()..b.y() + 1 {
+                        let mut x = a.x();
 
                         loop {
-                            let t = (x * TILE_WIDTH as i32 + TILE_WIDTH as i32) as f32 - p;
+                            let t = (x * TILE_WIDTH as i32 + TILE_WIDTH as i32) as f32 - px;
 
-                            if t < d {
+                            if t < dx {
                                 break;
                             }
 
                             if let Some(tile) = layer.get_tile(x, y) {
-                                d = match *tile {
-                                    Tile::Floor(_) => d.max(t),
-                                    Tile::Static(_, solid) => if solid { d.max(t) } else { d },
-                                    _ => d
+                                dx = match *tile {
+                                    Tile::Floor(_) => dx.max(t),
+                                    Tile::Static(_, solid) => if solid { dx.max(t) } else { dx },
+                                    _ => dx
                                 }
                             } else {
                                 break;
@@ -326,35 +321,27 @@ fn main() {
                         }
                     }
 
-                    if d < 0.0 {
-                        player.x += d;
-                    } else if d > 0.0 {
-                        player.x += d;
-                        player.dx = 0.0;
-                    } else {
+                    if dx >= 0.0 {
                         player.dx = 0.0;
                     }
                 }
 
                 if player.dy > 0.0 {
-                    let p = player.y + player.h as f32;
-                    let mut d = player.dy;
-
-                    for x in intersect.x()..intersect.x() + intersect.width() as i32 + 1 {
-                        let mut y = intersect.y();
+                    for x in a.x()..b.x() + 1 {
+                        let mut y = a.y();
 
                         loop {
-                            let t = (y * TILE_HEIGHT as i32) as f32 - p;
+                            let t = (y * TILE_HEIGHT as i32) as f32 - py;
 
-                            if t > d {
+                            if t > dy {
                                 break;
                             }
 
                             if let Some(tile) = layer.get_tile(x, y) {
-                                d = match *tile {
-                                    Tile::Floor(_) => d.min(t),
-                                    Tile::Static(_, solid) => if solid { d.min(t) } else { d },
-                                    _ => d
+                                dy = match *tile {
+                                    Tile::Floor(_) => dy.min(t),
+                                    Tile::Static(_, solid) => if solid { dy.min(t) } else { dy },
+                                    _ => dy
                                 }
                             } else {
                                 break;
@@ -364,37 +351,26 @@ fn main() {
                         }
                     }
 
-                    if d > 0.0 {
-                        player.y += d;
-                    } else if d < 0.0 {
-                        player.y += d;
+                    if dy <= 0.0 {
                         player.dy = 0.0;
-
-                        player.on_ground = true;
-                    } else {
-                        player.dy = 0.0;
-
                         player.on_ground = true;
                     }
                 } else if player.dy < 0.0 {
-                    let p = player.y;
-                    let mut d = player.dy;
-
-                    for x in intersect.x()..intersect.x() + intersect.width() as i32 + 1 {
-                        let mut y = intersect.y();
+                    for x in a.x()..b.x() + 1 {
+                        let mut y = a.y();
 
                         loop {
-                            let t = (y * TILE_HEIGHT as i32 + TILE_HEIGHT as i32) as f32 - p;
+                            let t = (y * TILE_HEIGHT as i32 + TILE_HEIGHT as i32) as f32 - py;
 
-                            if t < d {
+                            if t < dy {
                                 break;
                             }
 
                             if let Some(tile) = layer.get_tile(x, y) {
-                                d = match *tile {
-                                    Tile::Floor(_) => d.max(t),
-                                    Tile::Static(_, solid) => if solid { d.max(t) } else { d },
-                                    _ => d
+                                dy = match *tile {
+                                    Tile::Floor(_) => dy.max(t),
+                                    Tile::Static(_, solid) => if solid { dy.max(t) } else { dy },
+                                    _ => dy
                                 }
                             } else {
                                 break;
@@ -404,16 +380,14 @@ fn main() {
                         }
                     }
 
-                    if d < 0.0 {
-                        player.y += d;
-                    } else if d > 0.0 {
-                        player.y += d;
-                        player.dy = 0.0;
-                    } else {
+                    if dy >= 0.0 {
                         player.dy = 0.0;
                     }
                 }
             }
+
+            player.x += dx;
+            player.y += dy;
 
             player_sprite.update(elapsed);
 

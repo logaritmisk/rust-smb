@@ -51,6 +51,9 @@ impl<T> Layer<T> where T: Clone {
         else if y1 < 0 || y2 >= self.height as i32 {
             None
         }
+        else if x2 - x1 <= 0 || y2 - y1 <= 0 {
+            None
+        }
         else {
             Some(Rect::new_unwrap(x1, y1, (x2 - x1) as u32, (y2 - y1) as u32))
         }

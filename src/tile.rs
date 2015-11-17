@@ -138,5 +138,8 @@ mod tests {
 
         assert_eq!(layer.find_intersecting(&Rect::new_unwrap(7, 2, 1, 2)), Some(Rect::new_unwrap(2, 0, 1, 2)));
         assert_eq!(layer.find_intersecting(&Rect::new_unwrap(7, 5, 1, 2)), Some(Rect::new_unwrap(2, 1, 1, 2)));
+
+        // exactly one tile.
+        assert_eq!(layer.find_intersecting(&Rect::new_unwrap(0, 0, 3, 3)), Some(Rect::new_unwrap(0, 0, 1, 1)));
     }
 }

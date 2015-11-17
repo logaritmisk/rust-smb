@@ -11,7 +11,8 @@ pub trait Sprite {
 pub struct StaticSprite<'a> {
     texture: &'a Texture,
     x: i32,
-    y: i32
+    y: i32,
+    flip: (bool, bool)
 }
 
 impl<'a> StaticSprite<'a> {
@@ -19,14 +20,15 @@ impl<'a> StaticSprite<'a> {
         StaticSprite {
             texture: texture,
             x: x,
-            y: y
+            y: y,
+            flip: (false, false)
         }
     }
 }
 
 impl<'a> Sprite for StaticSprite<'a> {
     fn render(&self, drawer: &mut Renderer, destination: &Rect) {
-        drawer.copy(self.texture, Some(Rect::new_unwrap(self.x, self.y, 16, 16)), Some(*destination));
+        drawer.copy_ex(self.texture, Some(Rect::new_unwrap(self.x, self.y, 16, 16)), Some(*destination), 0.0, None, self.flip);
     }
 }
 
@@ -35,6 +37,7 @@ pub struct AnimatedSprite<'a> {
     texture: &'a Texture,
     x: i32,
     y: i32,
+    flip: (bool, bool),
     frame: u32,
     frames: u32,
     time: u64,
@@ -47,6 +50,7 @@ impl<'a> AnimatedSprite<'a> {
             texture: texture,
             x: x,
             y: y,
+            flip: (false, false),
             frame: 0,
             frames: frames,
             time: 0,
@@ -74,6 +78,6 @@ impl<'a> Sprite for AnimatedSprite<'a> {
     }
 
     fn render(&self, drawer: &mut Renderer, destination: &Rect) {
-        drawer.copy_ex(self.texture, Some(Rect::new_unwrap(self.x, self.y, 16, 16)), Some(*destination), 0.0, None, (false, false));
+        drawer.copy_ex(self.texture, Some(Rect::new_unwrap(self.x, self.y, 16, 16)), Some(*destination), 0.0, None, self.flip);
     }
 }

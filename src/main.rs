@@ -442,6 +442,7 @@ fn main() {
 
         let player_rect = camera_relative_rect(&camera.to_rect(), &player.to_rect());
 
+        player_sprite.flip = (true, false);
         player_sprite.render(&mut renderer, &player_rect);
 
         renderer.present();

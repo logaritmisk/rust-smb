@@ -74,6 +74,6 @@ impl<'a> Sprite for AnimatedSprite<'a> {
     }
 
     fn render(&self, drawer: &mut Renderer, destination: &Rect) {
-        drawer.copy(self.texture, Some(Rect::new_unwrap(self.x, self.y, 16, 16)), Some(*destination));
+        drawer.copy_ex(self.texture, Some(Rect::new_unwrap(self.x, self.y, 16, 16)), Some(*destination), 0.0, None, (false, false));
     }
 }

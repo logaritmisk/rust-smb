@@ -269,7 +269,7 @@ fn main() {
 
             if let Some(intersect) = layer.find_intersecting(&player.to_rect()) {
                 if player.dx > 0.0 {
-                    for y in intersect.y()..intersect.height() as i32 + 1 {
+                    for y in intersect.y()..(intersect.y() + intersect.height() as i32) {
                         let mut x = intersect.x();
 
                         loop {
@@ -297,7 +297,7 @@ fn main() {
                         player.dx = 0.0;
                     }
                 } else if player.dx < 0.0 {
-                    for y in intersect.y()..intersect.height() as i32 + 1 {
+                    for y in intersect.y()..(intersect.y() + intersect.height() as i32) {
                         let mut x = intersect.x();
 
                         loop {
@@ -327,7 +327,7 @@ fn main() {
                 }
 
                 if player.dy > 0.0 {
-                    for x in intersect.x()..intersect.width() as i32 + 1 {
+                    for x in intersect.x()..(intersect.x() + intersect.width() as i32) {
                         let mut y = intersect.y();
 
                         loop {
@@ -356,7 +356,7 @@ fn main() {
                         player.on_ground = true;
                     }
                 } else if player.dy < 0.0 {
-                    for x in intersect.x()..intersect.width() as i32 + 1 {
+                    for x in intersect.x()..(intersect.x() + intersect.width() as i32) {
                         let mut y = intersect.y();
 
                         loop {
@@ -404,10 +404,10 @@ fn main() {
 
             match *tile {
                 Tile::Background(src) => {
-                    let _ = renderer.copy(&world_sprites, Some(src), Some(object));
+                    renderer.copy(&world_sprites, Some(src), Some(object));
                 },
                 Tile::Floor(src) => {
-                    let _ = renderer.copy(&world_sprites, Some(src), Some(object));
+                    renderer.copy(&world_sprites, Some(src), Some(object));
                 },
                 Tile::Static(ref sprite, _) => sprite.render(&mut renderer, &object),
                 _ => ()

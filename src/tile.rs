@@ -40,33 +40,26 @@ impl<T> Layer<T> where T: Clone {
     }
 
     pub fn find_intersecting(&self, rect: &Rect) -> Option<Rect> {
-        if rect.x() + rect.width() as i32 <= 0 {
+        if rect.x() + rect.width() as i32 <= 0 || rect.x() >= (self.width * self.tile_width) as i32 {
             return None;
         }
-        if rect.y() + rect.height() as i32 <= 0 {
+        if rect.y() + rect.height() as i32 <= 0 || rect.y() >= (self.height * self.tile_height) as i32 {
             return None;
         }
 
         let x1 = rect.x() / self.tile_width as i32;
         let y1 = rect.y() / self.tile_height as i32;
-        let x2 = (rect.x() + rect.width() as i32) / self.tile_width as i32;
-        let y2 = (rect.y() + rect.height() as i32) / self.tile_height as i32;
 
-        if x1 < 0 || x2 >= self.width as i32 {
-            None
-        }
-        else if y1 < 0 || y2 >= self.height as i32 {
-            None
-        }
-        else {
-            Some(Rect::new_unwrap(x1, y1, (x2 - x1 + 1) as u32, (y2 - y1 + 1) as u32))
-        }
+        let x2 = (rect.x() + rect.width() as i32 - 1) / self.tile_width as i32;
+        let y2 = (rect.y() + rect.height() as i32 - 1) / self.tile_height as i32;
+
+        Some(Rect::new_unwrap(x1, y1, (x2 - x1 + 1) as u32, (y2 - y1 + 1) as u32))
     }
 
     pub fn for_each_intersecting<F: FnMut(&T, &Rect)>(&self, rect: &Rect, mut f: F) {
         if let Some(intersect) = self.find_intersecting(rect) {
-            for y in intersect.y()..intersect.height() as i32 + 1 {
-                for x in intersect.x()..intersect.x() as i32 + 1 {
+            for y in intersect.y()..(intersect.y() + intersect.height() as i32)  {
+                for x in intersect.x()..(intersect.x() + intersect.width() as i32) {
                     let position = Rect::new_unwrap(x * self.tile_width as i32, y * self.tile_height as i32, self.tile_width, self.tile_height);
 
                     f(self.get_tile(x, y).unwrap(), &position);

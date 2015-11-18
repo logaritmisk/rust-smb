@@ -1,9 +1,5 @@
 use sdl2::rect::Rect;
 
-pub enum PlayerFacing {
-    Left,
-    Right
-}
 
 pub struct Player {
     pub x: f32,
@@ -13,8 +9,7 @@ pub struct Player {
     pub dx: f32,
     pub dy: f32,
     pub gravity: f32,
-    pub on_ground: bool,
-    pub facing: PlayerFacing
+    pub on_ground: bool
 }
 
 impl Player {
@@ -27,25 +22,11 @@ impl Player {
             dx: 0.0,
             dy: 0.0,
             gravity: 0.3,
-            on_ground: false,
-            facing: PlayerFacing::Right
+            on_ground: false
         }
     }
 
     pub fn update(&mut self) {
-        match self.facing {
-            PlayerFacing::Right => {
-                if self.dx < 0.0 {
-                    self.facing = PlayerFacing::Left;
-                }
-            },
-            PlayerFacing::Left => {
-                if self.dx > 0.0 {
-                    self.facing = PlayerFacing::Right;
-                }
-            }
-        }
-
         self.dy += self.gravity;
 
         if self.dy > 8.0 {

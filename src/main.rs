@@ -6,8 +6,6 @@ extern crate sdl2_image;
 use std::path::Path;
 use std::thread::sleep_ms;
 
-//use sdl2::video::{Window, WindowPos, OPENGL};
-//use sdl2::timer::{get_ticks, delay};
 use sdl2_image::LoadTexture;
 use sdl2::rect::Rect;
 use sdl2::keyboard::Keycode;
@@ -226,6 +224,7 @@ fn main() {
             };
 
             player.dx = a * PLAYER_SPEED_X + (1.0 - a) * player.dx;
+            player_sprite.flip = (false, false);
         } else if keyboard.is_held(Keycode::Left) && (player.dx <= 0.0 || player.on_ground) {
             let a = if player.dx < 0.0 {
                 PLAYER_ACCELERATION_X_START
@@ -234,6 +233,7 @@ fn main() {
             };
 
             player.dx = a * -PLAYER_SPEED_X + (1.0 - a) * player.dx;
+            player_sprite.flip = (true, false);
         } else if player.on_ground {
             player.dx = (1.0 - PLAYER_ACCELERATION_X_STOP) * player.dx;
 
@@ -442,7 +442,6 @@ fn main() {
 
         let player_rect = camera_relative_rect(&camera.to_rect(), &player.to_rect());
 
-        player_sprite.flip = (true, false);
         player_sprite.render(&mut renderer, &player_rect);
 
         renderer.present();

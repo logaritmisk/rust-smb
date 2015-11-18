@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use sdl2::render::{Texture, Renderer};
 use sdl2::rect::Rect;
 
@@ -8,11 +9,22 @@ pub trait Sprite {
 }
 
 
+pub struct TextureManager<'a> {
+    textures: HashMap<String, &'a Texture>
+}
+
+impl<'a> TextureManager<'a> {
+    pub fn insert_texture(&mut self, key: String, texture: &'a Texture) {
+        self.textures.insert(key, texture);
+    }
+}
+
+
 pub struct StaticSprite<'a> {
     texture: &'a Texture,
     x: i32,
     y: i32,
-    flip: (bool, bool)
+    pub flip: (bool, bool)
 }
 
 impl<'a> StaticSprite<'a> {
@@ -37,7 +49,7 @@ pub struct AnimatedSprite<'a> {
     texture: &'a Texture,
     x: i32,
     y: i32,
-    flip: (bool, bool),
+    pub flip: (bool, bool),
     frame: u32,
     frames: u32,
     time: u64,

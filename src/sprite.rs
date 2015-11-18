@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use sdl2::render::{Texture, Renderer};
 use sdl2::rect::Rect;
 
@@ -6,17 +5,6 @@ use sdl2::rect::Rect;
 pub trait Sprite {
     fn update(&mut self, u64) {}
     fn render(&self, &mut Renderer, &Rect);
-}
-
-
-pub struct TextureManager<'a> {
-    textures: HashMap<String, &'a Texture>
-}
-
-impl<'a> TextureManager<'a> {
-    pub fn insert_texture(&mut self, key: String, texture: &'a Texture) {
-        self.textures.insert(key, texture);
-    }
 }
 
 

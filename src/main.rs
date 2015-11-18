@@ -10,6 +10,8 @@ use sdl2_image::LoadTexture;
 use sdl2::rect::Rect;
 use sdl2::keyboard::Keycode;
 use sdl2::pixels::Color;
+use sdl2::render::Renderer;
+
 
 use tile::Layer;
 use camera::Camera;
@@ -41,6 +43,49 @@ const PLAYER_ACCELERATION_X_STOP : f32 = 0.15;
 const PLAYER_ACCELERATION_X_CHANGE : f32 = 0.06;
 
 
+struct GameObject {
+    graphics: Box<GraphicsComponent + 'static>
+}
+
+impl GameObject {
+    pub fn new(graphics: Box<GraphicsComponent + 'static>) -> GameObject {
+        GameObject {
+            graphics: graphics
+        }
+    }
+
+    pub fn update(&self, renderer: &Renderer) {
+        self.graphics.update(self, renderer);
+    }
+}
+
+
+trait GraphicsComponent {
+    fn update(&self, &GameObject, &Renderer);
+}
+
+
+struct PlayerGraphicsComponent {
+    x: f32,
+    y: f32
+}
+
+impl PlayerGraphicsComponent {
+    pub fn new(x: f32, y: f32) -> PlayerGraphicsComponent {
+        PlayerGraphicsComponent {
+            x: x,
+            y: y
+        }
+    }
+}
+
+impl GraphicsComponent for PlayerGraphicsComponent {
+    fn update(&self, object: &GameObject, renderer: &Renderer) {
+        println!("epic shit!");
+    }
+}
+
+
 #[derive(Clone)]
 enum Tile<'a> {
     Empty,
@@ -59,6 +104,11 @@ fn main() {
 
     let window = video_subsystem.window("Super Matte Bros", SCREEN_WIDTH, SCREEN_HEIGHT).position_centered().build().unwrap();
     let mut renderer = window.renderer().software().build().unwrap();
+
+
+    //let _player = GameObject::new(Box::new(PlayerGraphicsComponent::new(390.0, 390.0)));
+    //_player.update(&renderer);
+
 
     let world_sprites = renderer.load_texture(&Path::new("gfx/world.png")).unwrap();
 

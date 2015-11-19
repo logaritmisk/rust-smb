@@ -10,7 +10,7 @@ use sdl2_image::LoadTexture;
 use sdl2::rect::Rect;
 use sdl2::keyboard::Keycode;
 use sdl2::pixels::Color;
-use sdl2::render::Renderer;
+use sdl2::render::{Renderer, Texture};
 
 
 use tile::Layer;
@@ -44,12 +44,16 @@ const PLAYER_ACCELERATION_X_CHANGE : f32 = 0.06;
 
 
 struct GameObject {
+    x: f32,
+    y: f32,
     graphics: Box<GraphicsComponent + 'static>
 }
 
 impl GameObject {
-    pub fn new(graphics: Box<GraphicsComponent + 'static>) -> GameObject {
+    pub fn new(x: f32, y: f32, graphics: Box<GraphicsComponent + 'static>) -> GameObject {
         GameObject {
+            x: x,
+            y: y,
             graphics: graphics
         }
     }
@@ -65,21 +69,19 @@ trait GraphicsComponent {
 }
 
 
-struct PlayerGraphicsComponent {
-    x: f32,
-    y: f32
+struct PlayerGraphicsComponent<'a> {
+    sprite_running: Box<Sprite + 'a>
 }
 
-impl PlayerGraphicsComponent {
-    pub fn new(x: f32, y: f32) -> PlayerGraphicsComponent {
+impl<'a> PlayerGraphicsComponent<'a> {
+    pub fn new(texture: &'a Texture) -> PlayerGraphicsComponent<'a> {
         PlayerGraphicsComponent {
-            x: x,
-            y: y
+            sprite_running: Box::new(AnimatedSprite::new(&texture, 96, 32, 3, 15))
         }
     }
 }
 
-impl GraphicsComponent for PlayerGraphicsComponent {
+impl<'a> GraphicsComponent for PlayerGraphicsComponent<'a> {
     fn update(&self, object: &GameObject, renderer: &Renderer) {
         println!("epic shit!");
     }
@@ -90,7 +92,6 @@ impl GraphicsComponent for PlayerGraphicsComponent {
 enum Tile<'a> {
     Empty,
     Static(&'a StaticSprite<'a>, bool),
-
     Background(Rect),
     Floor(Rect)
 }
@@ -105,17 +106,15 @@ fn main() {
     let window = video_subsystem.window("Super Matte Bros", SCREEN_WIDTH, SCREEN_HEIGHT).position_centered().build().unwrap();
     let mut renderer = window.renderer().software().build().unwrap();
 
-
-    //let _player = GameObject::new(Box::new(PlayerGraphicsComponent::new(390.0, 390.0)));
-    //_player.update(&renderer);
-
-
     let world_sprites = renderer.load_texture(&Path::new("gfx/world.png")).unwrap();
 
     let floor_sprite = StaticSprite::new(&world_sprites, 16 * 0, 16 * 0);
     let brick_sprite = StaticSprite::new(&world_sprites, 16 * 1, 16 * 0);
 
     let player_sprites = renderer.load_texture(&Path::new("gfx/mario.png")).unwrap();
+
+    //let _player = GameObject::new(390.0, 390.0, Box::new(PlayerGraphicsComponent::new(&player_sprites)));
+    //_player.update(&renderer);
 
     let mut player_sprite = AnimatedSprite::new(&player_sprites, 96, 32, 3, 15);
 

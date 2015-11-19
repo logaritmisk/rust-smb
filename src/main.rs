@@ -44,8 +44,15 @@ const PLAYER_ACCELERATION_X_CHANGE : f32 = 0.06;
 
 
 struct GameObject {
-    x: f32,
-    y: f32,
+    pub x: f32,
+    pub y: f32,
+
+    pub dx: f32,
+    pub dy: f32,
+    pub gravity: f32,
+
+    pub on_ground: bool,
+
     graphics: Box<GraphicsComponent + 'static>
 }
 
@@ -54,18 +61,30 @@ impl GameObject {
         GameObject {
             x: x,
             y: y,
+
+            dx: 0.0,
+            dy: 0.0,
+            gravity: 0.3,
+
+            on_ground: false,
+
             graphics: graphics
         }
     }
 
-    pub fn update(&self, renderer: &Renderer) {
-        self.graphics.update(self, renderer);
+    pub fn update(&self, elapsed: u64) {
+        self.graphics.update(self, elapsed);
+    }
+
+    pub fn render(&self, renderer: &Renderer) {
+        self.graphics.render(self, renderer);
     }
 }
 
 
 trait GraphicsComponent {
-    fn update(&self, &GameObject, &Renderer);
+    fn update(&self, &GameObject, u64);
+    fn render(&self, &GameObject, &Renderer);
 }
 
 
@@ -82,7 +101,11 @@ impl<'a> PlayerGraphicsComponent<'a> {
 }
 
 impl<'a> GraphicsComponent for PlayerGraphicsComponent<'a> {
-    fn update(&self, object: &GameObject, renderer: &Renderer) {
+    fn update(&self, object: &GameObject, elapsed: u64) {
+
+    }
+
+    fn render(&self, object: &GameObject, renderer: &Renderer) {
         println!("epic shit!");
     }
 }
@@ -113,8 +136,8 @@ fn main() {
 
     let player_sprites = renderer.load_texture(&Path::new("gfx/mario.png")).unwrap();
 
-    //let _player = GameObject::new(390.0, 390.0, Box::new(PlayerGraphicsComponent::new(&player_sprites)));
-    //_player.update(&renderer);
+    // new shit!
+    // let _player = GameObject::new(390.0, 390.0, Box::new(PlayerGraphicsComponent::new(&player_sprites)));
 
     let mut player_sprite = AnimatedSprite::new(&player_sprites, 96, 32, 3, 15);
 
@@ -490,6 +513,9 @@ fn main() {
         });
 
         let player_rect = camera_relative_rect(&camera.to_rect(), &player.to_rect());
+
+        // new shit!
+        // _player.render(&renderer);
 
         player_sprite.render(&mut renderer, &player_rect);
 

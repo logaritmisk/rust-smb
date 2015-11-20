@@ -487,7 +487,7 @@ fn main() {
                 }
             }
 
-            //player_sprite.update(elapsed);
+            // player_sprite.update(elapsed);
 
             camera.center(&_player.to_rect());
 

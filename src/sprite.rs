@@ -62,22 +62,14 @@ impl<'a> AnimatedSprite<'a> {
 impl<'a> Sprite for AnimatedSprite<'a> {
     fn update(&mut self, elapsed: u64) {
         self.time += elapsed;
-
-        if self.time > self.frame_time {
-            self.frame += 1;
-            self.time = 0;
-
-            if self.frame < self.frames {
-                self.x += 16;
-            } else {
-                self.x -= 16 * (self.frames - 1) as i32;
-
-                self.frame = 0;
-            }
-        }
+        self.frame += (self.time / self.frame_time) as u32;
+        self.frame %= self.frames;
+        self.time %= self.frame_time;
     }
 
     fn render(&self, drawer: &mut Renderer, destination: &Rect) {
-        drawer.copy_ex(self.texture, Some(Rect::new_unwrap(self.x, self.y, 16, 16)), Some(*destination), 0.0, None, self.flip);
+        let x = self.x + (self.frame * 16) as i32;
+
+        drawer.copy_ex(self.texture, Some(Rect::new_unwrap(x, self.y, 16, 16)), Some(*destination), 0.0, None, self.flip);
     }
 }

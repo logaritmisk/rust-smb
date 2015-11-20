@@ -5,6 +5,7 @@ extern crate sdl2_image;
 
 use std::path::Path;
 use std::thread::sleep_ms;
+use std::cell::RefCell;
 
 use sdl2_image::LoadTexture;
 use sdl2::rect::Rect;
@@ -46,67 +47,90 @@ const PLAYER_ACCELERATION_X_CHANGE : f32 = 0.06;
 struct GameObject<'a> {
     pub x: f32,
     pub y: f32,
-
+    pub w: u32,
+    pub h: u32,
     pub dx: f32,
     pub dy: f32,
     pub gravity: f32,
-
     pub on_ground: bool,
-
+    physics: Box<PhysicsComponent + 'a>,
     graphics: Box<GraphicsComponent + 'a>
 }
 
 impl<'a> GameObject<'a> {
-    pub fn new(x: f32, y: f32, graphics: Box<GraphicsComponent + 'a>) -> GameObject<'a> {
+    pub fn new(x: f32, y: f32, physics: Box<PhysicsComponent + 'a>, graphics: Box<GraphicsComponent + 'a>) -> GameObject<'a> {
         GameObject {
             x: x,
             y: y,
-
+            w: 32,
+            h: 32,
             dx: 0.0,
             dy: 0.0,
             gravity: 0.3,
-
             on_ground: false,
-
+            physics: physics,
             graphics: graphics
         }
     }
 
     pub fn update(&self, elapsed: u64) {
+        self.physics.update(self, elapsed);
         self.graphics.update(self, elapsed);
     }
 
-    pub fn render(&self, renderer: &Renderer) {
-        self.graphics.render(self, renderer);
+    pub fn render(&self, renderer: &mut Renderer, destination: &Rect) {
+        self.physics.render(self, renderer, destination);
+        self.graphics.render(self, renderer, destination);
+    }
+
+    pub fn to_rect(&self) -> Rect {
+        Rect::new_unwrap(self.x as i32, self.y as i32, 32, 32)
+    }
+}
+
+
+trait PhysicsComponent {
+    fn update(&self, &GameObject, u64);
+    fn render(&self, &GameObject, &mut Renderer, &Rect);
+}
+
+
+struct PlayerPhysicsComponent;
+
+impl PhysicsComponent for PlayerPhysicsComponent {
+    fn update(&self, object: &GameObject, elapsed: u64) {
+    }
+
+    fn render(&self, object: &GameObject, renderer: &mut Renderer, destination: &Rect) {
     }
 }
 
 
 trait GraphicsComponent {
     fn update(&self, &GameObject, u64);
-    fn render(&self, &GameObject, &Renderer);
+    fn render(&self, &GameObject, &mut Renderer, &Rect);
 }
 
 
 struct PlayerGraphicsComponent<'a> {
-    sprite_running: Box<Sprite + 'a>
+    sprite_running: RefCell<Box<Sprite + 'a>>
 }
 
 impl<'a> PlayerGraphicsComponent<'a> {
     pub fn new(texture: &'a Texture) -> PlayerGraphicsComponent<'a> {
         PlayerGraphicsComponent {
-            sprite_running: Box::new(AnimatedSprite::new(&texture, 96, 32, 3, 15))
+            sprite_running: RefCell::new(Box::new(AnimatedSprite::new(&texture, 96, 32, 3, 10)))
         }
     }
 }
 
 impl<'a> GraphicsComponent for PlayerGraphicsComponent<'a> {
     fn update(&self, object: &GameObject, elapsed: u64) {
-
+        self.sprite_running.borrow_mut().update(elapsed);
     }
 
-    fn render(&self, object: &GameObject, renderer: &Renderer) {
-        println!("epic shit!");
+    fn render(&self, object: &GameObject, renderer: &mut Renderer, destination: &Rect) {
+        self.sprite_running.borrow().render(renderer, destination);
     }
 }
 
@@ -136,10 +160,7 @@ fn main() {
 
     let player_sprites = renderer.load_texture(&Path::new("gfx/mario.png")).unwrap();
 
-    // new shit!
-    let mut _player = GameObject::new(390.0, 390.0, Box::new(PlayerGraphicsComponent::new(&player_sprites)));
-
-    let mut player_sprite = AnimatedSprite::new(&player_sprites, 96, 32, 3, 15);
+    let mut player = GameObject::new(390.0, 390.0, Box::new(PlayerPhysicsComponent), Box::new(PlayerGraphicsComponent::new(&player_sprites)));
 
     let mut keyboard = KeyboardHandler::new();
 
@@ -288,55 +309,61 @@ fn main() {
             break 'main;
         }
 
-        if keyboard.is_held(Keycode::Right) && (_player.dx >= 0.0 || _player.on_ground) {
-            let a = if _player.dx > 0.0 {
+        if keyboard.is_held(Keycode::Right) && (player.dx >= 0.0 || player.on_ground) {
+            let a = if player.dx > 0.0 {
                 PLAYER_ACCELERATION_X_START
             } else {
                 PLAYER_ACCELERATION_X_CHANGE
             };
 
-            _player.dx = a * PLAYER_SPEED_X + (1.0 - a) * _player.dx;
+            player.dx = a * PLAYER_SPEED_X + (1.0 - a) * player.dx;
             // _player_sprite.flip = (false, false);
-        } else if keyboard.is_held(Keycode::Left) && (_player.dx <= 0.0 || _player.on_ground) {
-            let a = if _player.dx < 0.0 {
+        } else if keyboard.is_held(Keycode::Left) && (player.dx <= 0.0 || player.on_ground) {
+            let a = if player.dx < 0.0 {
                 PLAYER_ACCELERATION_X_START
             } else {
                 PLAYER_ACCELERATION_X_CHANGE
             };
 
-            _player.dx = a * -PLAYER_SPEED_X + (1.0 - a) * _player.dx;
+            player.dx = a * -PLAYER_SPEED_X + (1.0 - a) * player.dx;
             // _player_sprite.flip = (true, false);
-        } else if _player.on_ground {
-            _player.dx = (1.0 - PLAYER_ACCELERATION_X_STOP) * _player.dx;
+        } else if player.on_ground {
+            player.dx = (1.0 - PLAYER_ACCELERATION_X_STOP) * player.dx;
 
-            if _player.dx.abs() <= PLAYER_THRESHOLD_X {
-                _player.dx = 0.0;
+            if player.dx.abs() <= PLAYER_THRESHOLD_X {
+                player.dx = 0.0;
             }
         }
 
-        if _player.on_ground {
+        if player.on_ground {
             if keyboard.was_pressed(Keycode::Up) {
-                _player.dy = -8.0;
+                player.dy = -8.0;
 
-                _player.on_ground = false;
+                player.on_ground = false;
             }
         }
 
         if keyboard.was_released(Keycode::Up) {
-            if _player.dy < -4.0 {
-                _player.dy = -4.0;
+            if player.dy < -4.0 {
+                player.dy = -4.0;
             }
         }
 
         while lag >= MS_PER_UPDATE {
-            _player.update();
+            player.dy += player.gravity;
 
-            _player.on_ground = false;
+            if player.dy > 8.0 {
+                player.dy = 8.0;
+            } else if player.dy < -8.0 {
+                player.dy = -8.0;
+            }
 
-            if let Some(intersect) = layer.find_intersecting(&_player.to_rect()) {
-                if _player.dx > 0.0 {
-                    let p = _player.x + _player.w as f32;
-                    let mut d = _player.dx;
+            player.on_ground = false;
+
+            if let Some(intersect) = layer.find_intersecting(&player.to_rect()) {
+                if player.dx > 0.0 {
+                    let p = player.x + player.w as f32;
+                    let mut d = player.dx;
 
                     for y in intersect.y()..(intersect.y() + intersect.height() as i32) {
                         let mut x = intersect.x();
@@ -363,16 +390,16 @@ fn main() {
                     }
 
                     if d > 0.0 {
-                        _player.x += d;
+                        player.x += d;
                     } else if d < 0.0 {
-                        _player.x += d;
-                        _player.dx = 0.0;
+                        player.x += d;
+                        player.dx = 0.0;
                     } else {
-                        _player.dx = 0.0;
+                        player.dx = 0.0;
                     }
-                } else if _player.dx < 0.0 {
-                    let p = _player.x;
-                    let mut d = _player.dx;
+                } else if player.dx < 0.0 {
+                    let p = player.x;
+                    let mut d = player.dx;
 
                     for y in intersect.y()..(intersect.y() + intersect.height() as i32) {
                         let mut x = intersect.x();
@@ -399,18 +426,18 @@ fn main() {
                     }
 
                     if d < 0.0 {
-                        _player.x += d;
+                        player.x += d;
                     } else if d > 0.0 {
-                        _player.x += d;
-                        _player.dx = 0.0;
+                        player.x += d;
+                        player.dx = 0.0;
                     } else {
-                        _player.dx = 0.0;
+                        player.dx = 0.0;
                     }
                 }
 
-                if _player.dy > 0.0 {
-                    let p = _player.y + _player.h as f32;
-                    let mut d = _player.dy;
+                if player.dy > 0.0 {
+                    let p = player.y + player.h as f32;
+                    let mut d = player.dy;
 
                     for x in intersect.x()..(intersect.x() + intersect.width() as i32) {
                         let mut y = intersect.y();
@@ -437,20 +464,20 @@ fn main() {
                     }
 
                     if d > 0.0 {
-                        _player.y += d;
+                        player.y += d;
                     } else if d < 0.0 {
-                        _player.y += d;
-                        _player.dy = 0.0;
+                        player.y += d;
+                        player.dy = 0.0;
 
-                        _player.on_ground = true;
+                        player.on_ground = true;
                     } else {
-                        _player.dy = 0.0;
+                        player.dy = 0.0;
 
-                        _player.on_ground = true;
+                        player.on_ground = true;
                     }
-                } else if _player.dy < 0.0 {
-                    let p = _player.y;
-                    let mut d = _player.dy;
+                } else if player.dy < 0.0 {
+                    let p = player.y;
+                    let mut d = player.dy;
 
                     for x in intersect.x()..(intersect.x() + intersect.width() as i32) {
                         let mut y = intersect.y();
@@ -477,19 +504,19 @@ fn main() {
                     }
 
                     if d < 0.0 {
-                        _player.y += d;
+                        player.y += d;
                     } else if d > 0.0 {
-                        _player.y += d;
-                        _player.dy = 0.0;
+                        player.y += d;
+                        player.dy = 0.0;
                     } else {
-                        _player.dy = 0.0;
+                        player.dy = 0.0;
                     }
                 }
             }
 
-            // player_sprite.update(elapsed);
+            player.update(elapsed);
 
-            camera.center(&_player.to_rect());
+            camera.center(&player.to_rect());
 
             lag -= MS_PER_UPDATE;
         }
@@ -514,10 +541,7 @@ fn main() {
 
         let player_rect = camera_relative_rect(&camera.to_rect(), &player.to_rect());
 
-        // new shit!
-        // _player.render(&renderer);
-
-        player_sprite.render(&mut renderer, &player_rect);
+        player.render(&mut renderer, &player_rect);
 
         renderer.present();
 

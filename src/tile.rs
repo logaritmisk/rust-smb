@@ -1,5 +1,4 @@
 use std::iter::repeat;
-//use std::cmp::{min, max};
 
 use sdl2::rect::Rect;
 

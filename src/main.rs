@@ -53,6 +53,7 @@ struct GameObject<'a> {
     pub dy: f32,
     pub gravity: f32,
     pub on_ground: bool,
+    pub flip: (bool, bool),
     physics: Box<PhysicsComponent + 'a>,
     graphics: Box<GraphicsComponent + 'a>
 }
@@ -68,6 +69,7 @@ impl<'a> GameObject<'a> {
             dy: 0.0,
             gravity: 0.3,
             on_ground: false,
+            flip: (false, false),
             physics: physics,
             graphics: graphics
         }
@@ -271,8 +273,6 @@ fn main() {
 
     let mut camera = Camera::new(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, layer.to_rect());
 
-    // let mut player = Player::new(390.0, 390.0);
-
     let mut current : u64;
     let mut elapsed : u64;
     let mut previous : u64 = time::precise_time_ns() / 1_000_000;
@@ -317,7 +317,7 @@ fn main() {
             };
 
             player.dx = a * PLAYER_SPEED_X + (1.0 - a) * player.dx;
-            // _player_sprite.flip = (false, false);
+            player.flip = (false, false);
         } else if keyboard.is_held(Keycode::Left) && (player.dx <= 0.0 || player.on_ground) {
             let a = if player.dx < 0.0 {
                 PLAYER_ACCELERATION_X_START
@@ -326,7 +326,7 @@ fn main() {
             };
 
             player.dx = a * -PLAYER_SPEED_X + (1.0 - a) * player.dx;
-            // _player_sprite.flip = (true, false);
+            player.flip = (true, false);
         } else if player.on_ground {
             player.dx = (1.0 - PLAYER_ACCELERATION_X_STOP) * player.dx;
 

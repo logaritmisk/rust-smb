@@ -115,13 +115,13 @@ trait GraphicsComponent {
 
 
 struct PlayerGraphicsComponent<'a> {
-    sprite_running: RefCell<Box<Sprite + 'a>>
+    sprite_running: RefCell<AnimatedSprite<'a>>
 }
 
 impl<'a> PlayerGraphicsComponent<'a> {
     pub fn new(texture: &'a Texture) -> PlayerGraphicsComponent<'a> {
         PlayerGraphicsComponent {
-            sprite_running: RefCell::new(Box::new(AnimatedSprite::new(&texture, 96, 32, 3, 10)))
+            sprite_running: RefCell::new(AnimatedSprite::new(&texture, 96, 32, 3, 10))
         }
     }
 }
@@ -132,7 +132,11 @@ impl<'a> GraphicsComponent for PlayerGraphicsComponent<'a> {
     }
 
     fn render(&self, object: &GameObject, renderer: &mut Renderer, destination: &Rect) {
-        self.sprite_running.borrow().render(renderer, destination);
+        let mut sprite = self.sprite_running.borrow_mut();
+
+        sprite.flip = object.flip;
+
+        sprite.render(renderer, destination);
     }
 }
 

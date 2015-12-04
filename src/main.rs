@@ -4,7 +4,7 @@ extern crate sdl2_image;
 
 
 use std::path::Path;
-use std::thread::sleep_ms;
+use std::thread::sleep;
 use std::cell::RefCell;
 
 use sdl2_image::LoadTexture;
@@ -16,7 +16,7 @@ use sdl2::render::{Renderer, Texture};
 
 use tile::Layer;
 use camera::Camera;
-use player::Player;
+// use player::Player;
 use keyboard::KeyboardHandler;
 use sprite::{Sprite, StaticSprite, AnimatedSprite};
 
@@ -549,7 +549,7 @@ fn main() {
 
         renderer.present();
 
-        sleep_ms(5);
+        sleep(std::time::Duration::from_millis(5));
     }
 
     sdl2_image::quit();

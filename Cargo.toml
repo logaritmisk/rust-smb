@@ -5,8 +5,8 @@ authors = ["logaritmisk <anders.e.olsson@gmail.com>"]
 
 [dependencies]
 time = "0.1"
-sdl2 = "0.9"
-sdl2_image = "0.3"
+sdl2 = "0.12.0"
+sdl2_image = "0.6.0"
 
 [[bin]]
 name = "super-matte-bros"

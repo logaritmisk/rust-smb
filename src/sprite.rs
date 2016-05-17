@@ -1,10 +1,11 @@
+use std::cell::RefCell;
+
 use sdl2::render::{Texture, Renderer};
 use sdl2::rect::Rect;
 
 
 pub trait Sprite {
-    fn update(&mut self, u64) {}
-    fn render(&self, &mut Renderer, &Rect);
+    fn render(&self, f64, &mut Renderer, &Rect);
 }
 
 
@@ -12,7 +13,8 @@ pub struct StaticSprite<'a> {
     texture: &'a Texture,
     x: i32,
     y: i32,
-    pub flip: (bool, bool)
+    pub flip_horizontal: bool,
+    pub flip_vertical: bool
 }
 
 impl<'a> StaticSprite<'a> {
@@ -21,14 +23,15 @@ impl<'a> StaticSprite<'a> {
             texture: texture,
             x: x,
             y: y,
-            flip: (false, false)
+            flip_horizontal: false,
+            flip_vertical: false
         }
     }
 }
 
 impl<'a> Sprite for StaticSprite<'a> {
-    fn render(&self, drawer: &mut Renderer, destination: &Rect) {
-        drawer.copy_ex(self.texture, Some(Rect::new_unwrap(self.x, self.y, 16, 16)), Some(*destination), 0.0, None, self.flip);
+    fn render(&self, elapsed: f64, drawer: &mut Renderer, destination: &Rect) {
+        drawer.copy_ex(self.texture, Some(Rect::new(self.x, self.y, 16, 16)), Some(*destination), 0.0, None, self.flip_horizontal, self.flip_vertical);
     }
 }
 
@@ -37,39 +40,42 @@ pub struct AnimatedSprite<'a> {
     texture: &'a Texture,
     x: i32,
     y: i32,
-    pub flip: (bool, bool),
-    frame: u32,
+    pub flip_horizontal: bool,
+    pub flip_vertical: bool,
     frames: u32,
-    time: u64,
-    frame_time: u64
+    frame_time: f64,
+    frame: RefCell<u32>,
+    time: RefCell<f64>
 }
 
 impl<'a> AnimatedSprite<'a> {
-    pub fn new(texture: &'a Texture, x: i32, y: i32, frames: u32, fps: u32) -> AnimatedSprite<'a> {
+    pub fn new(texture: &'a Texture, x: i32, y: i32, frames: u32, fps: f32) -> AnimatedSprite<'a> {
         AnimatedSprite {
             texture: texture,
             x: x,
             y: y,
-            flip: (false, false),
-            frame: 0,
+            flip_horizontal: false,
+            flip_vertical: false,
+            frame: RefCell::new(0),
             frames: frames,
-            time: 0,
-            frame_time: 1000 / fps as u64
+            time: RefCell::new(0.0),
+            frame_time: 1000.0 / fps as f64
         }
     }
 }
 
 impl<'a> Sprite for AnimatedSprite<'a> {
-    fn update(&mut self, elapsed: u64) {
-        self.time += elapsed;
-        self.frame += (self.time / self.frame_time) as u32;
-        self.frame %= self.frames;
-        self.time %= self.frame_time;
-    }
+    fn render(&self, elapsed: f64, drawer: &mut Renderer, destination: &Rect) {
+        let mut time = self.time.borrow_mut();
+        let mut frame = self.frame.borrow_mut();
 
-    fn render(&self, drawer: &mut Renderer, destination: &Rect) {
-        let x = self.x + (self.frame * 16) as i32;
+        *time += 10.0 + elapsed;
+        *frame += (*time / self.frame_time) as u32;
+        *time %= self.frame_time;
+        *frame %= self.frames;
 
-        drawer.copy_ex(self.texture, Some(Rect::new_unwrap(x, self.y, 16, 16)), Some(*destination), 0.0, None, self.flip);
+        let x = self.x + (*frame * 16) as i32;
+
+        drawer.copy_ex(self.texture, Some(Rect::new(x, self.y, 16, 16)), Some(*destination), 0.0, None, self.flip_horizontal, self.flip_vertical);
     }
 }

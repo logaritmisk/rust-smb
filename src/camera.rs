@@ -40,7 +40,11 @@ impl Camera {
         self.y = y;
     }
 
+    pub fn to_relative_rect(&self, rect: &Rect) -> Rect {
+        Rect::new(rect.x() - self.x, rect.y() - self.y, rect.width(), rect.height())
+    }
+
     pub fn to_rect(&self) -> Rect {
-        Rect::new_unwrap(self.x, self.y, self.width, self.height)
+        Rect::new(self.x, self.y, self.width, self.height)
     }
 }

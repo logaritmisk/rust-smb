@@ -4,8 +4,9 @@ extern crate sdl2_image;
 
 
 use std::path::Path;
-use std::thread::sleep;
+// use std::thread::sleep;
 use std::cell::RefCell;
+use std::collections::HashMap;
 
 use sdl2_image::LoadTexture;
 use sdl2::rect::Rect;
@@ -14,6 +15,7 @@ use sdl2::pixels::Color;
 use sdl2::render::{Renderer, Texture};
 
 
+// use timer::current_time;
 use tile::Layer;
 use camera::Camera;
 // use player::Player;
@@ -21,6 +23,7 @@ use keyboard::KeyboardHandler;
 use sprite::{Sprite, StaticSprite, AnimatedSprite};
 
 
+mod timer;
 mod tile;
 mod camera;
 mod player;
@@ -34,7 +37,7 @@ const SCREEN_HEIGHT : u32 = 640;
 const TILE_WIDTH : u32 = 32;
 const TILE_HEIGHT : u32 = 32;
 
-const MS_PER_UPDATE : u64 = 10;
+const MS_PER_UPDATE : f64 = 10.0;
 
 const PLAYER_SPEED_X : f32 = 4.0;
 const PLAYER_THRESHOLD_X : f32 = 0.2;
@@ -53,13 +56,14 @@ struct GameObject<'a> {
     pub dy: f32,
     pub gravity: f32,
     pub on_ground: bool,
-    pub flip: (bool, bool),
-    physics: Box<PhysicsComponent + 'a>,
-    graphics: Box<GraphicsComponent + 'a>
+    pub flip_horizontal: bool,
+    pub flip_vertical: bool,
+    physics: Box<Updatable + 'a>,
+    graphics: Box<Renderable + 'a>
 }
 
 impl<'a> GameObject<'a> {
-    pub fn new(x: f32, y: f32, physics: Box<PhysicsComponent + 'a>, graphics: Box<GraphicsComponent + 'a>) -> GameObject<'a> {
+    pub fn new(x: f32, y: f32, physics: Box<Updatable + 'a>, graphics: Box<Renderable + 'a>) -> GameObject<'a> {
         GameObject {
             x: x,
             y: y,
@@ -69,48 +73,40 @@ impl<'a> GameObject<'a> {
             dy: 0.0,
             gravity: 0.3,
             on_ground: false,
-            flip: (false, false),
+            flip_horizontal: false,
+            flip_vertical: false,
             physics: physics,
             graphics: graphics
         }
     }
 
-    pub fn update(&self, elapsed: u64) {
-        self.physics.update(self, elapsed);
-        self.graphics.update(self, elapsed);
+    pub fn update(&self) {
+        self.physics.update(self);
     }
 
-    pub fn render(&self, renderer: &mut Renderer, destination: &Rect) {
-        self.physics.render(self, renderer, destination);
-        self.graphics.render(self, renderer, destination);
+    pub fn render(&self, elapsed: f64, renderer: &mut Renderer, destination: &Rect) {
+        self.graphics.render(self, elapsed, renderer, destination);
     }
 
     pub fn to_rect(&self) -> Rect {
-        Rect::new_unwrap(self.x as i32, self.y as i32, 32, 32)
+        Rect::new(self.x as i32, self.y as i32, 32, 32)
     }
 }
 
+trait Updatable {
+    fn update(&self, &GameObject);
+}
 
-trait PhysicsComponent {
-    fn update(&self, &GameObject, u64);
-    fn render(&self, &GameObject, &mut Renderer, &Rect);
+trait Renderable {
+    fn render(&self, &GameObject, f64, &mut Renderer, &Rect);
 }
 
 
 struct PlayerPhysicsComponent;
 
-impl PhysicsComponent for PlayerPhysicsComponent {
-    fn update(&self, object: &GameObject, elapsed: u64) {
+impl Updatable for PlayerPhysicsComponent {
+    fn update(&self, object: &GameObject) {
     }
-
-    fn render(&self, object: &GameObject, renderer: &mut Renderer, destination: &Rect) {
-    }
-}
-
-
-trait GraphicsComponent {
-    fn update(&self, &GameObject, u64);
-    fn render(&self, &GameObject, &mut Renderer, &Rect);
 }
 
 
@@ -121,22 +117,19 @@ struct PlayerGraphicsComponent<'a> {
 impl<'a> PlayerGraphicsComponent<'a> {
     pub fn new(texture: &'a Texture) -> PlayerGraphicsComponent<'a> {
         PlayerGraphicsComponent {
-            sprite_running: RefCell::new(AnimatedSprite::new(&texture, 96, 32, 3, 10))
+            sprite_running: RefCell::new(AnimatedSprite::new(&texture, 96, 32, 3, 10.0))
         }
     }
 }
 
-impl<'a> GraphicsComponent for PlayerGraphicsComponent<'a> {
-    fn update(&self, object: &GameObject, elapsed: u64) {
-        self.sprite_running.borrow_mut().update(elapsed);
-    }
-
-    fn render(&self, object: &GameObject, renderer: &mut Renderer, destination: &Rect) {
+impl<'a> Renderable for PlayerGraphicsComponent<'a> {
+    fn render(&self, object: &GameObject, elapsed: f64, renderer: &mut Renderer, destination: &Rect) {
         let mut sprite = self.sprite_running.borrow_mut();
 
-        sprite.flip = object.flip;
+        sprite.flip_horizontal = object.flip_horizontal;
+        sprite.flip_vertical = object.flip_vertical;
 
-        sprite.render(renderer, destination);
+        sprite.render(elapsed, renderer, destination);
     }
 }
 
@@ -149,15 +142,30 @@ enum Tile<'a> {
     Floor(Rect)
 }
 
+struct TextureManager<'a> {
+    renderer: &'a mut Renderer<'a>,
+    textures: HashMap<&'static str, Texture>
+}
+
+impl<'a> TextureManager<'a> {
+    fn new(renderer: &'a mut Renderer<'a>) -> TextureManager<'a> {
+        TextureManager {
+            renderer: renderer,
+            textures: HashMap::new()
+        }
+    }
+}
 
 fn main() {
     let sdl_context = sdl2::init().unwrap();
     let video_subsystem = sdl_context.video().unwrap();
 
-    sdl2_image::init(sdl2_image::INIT_PNG);
+    let _image_context = sdl2_image::init(sdl2_image::INIT_PNG).unwrap();
 
     let window = video_subsystem.window("Super Matte Bros", SCREEN_WIDTH, SCREEN_HEIGHT).position_centered().build().unwrap();
     let mut renderer = window.renderer().software().build().unwrap();
+
+    // let textures = TextureManager::new(&mut renderer);
 
     let world_sprites = renderer.load_texture(&Path::new("gfx/world.png")).unwrap();
 
@@ -173,100 +181,100 @@ fn main() {
     let mut layer = Layer::new(212, 20, TILE_WIDTH, TILE_HEIGHT, Tile::Empty);
 
 
-    layer.set_tile(2, 15, Tile::Background(Rect::new_unwrap(16 * 9, 16 * 8, 16, 16)));
+    layer.set_tile(2, 15, Tile::Background(Rect::new(16 * 9, 16 * 8, 16, 16)));
 
-    layer.set_tile(1, 16, Tile::Background(Rect::new_unwrap(16 * 8, 16 * 8, 16, 16)));
-    layer.set_tile(2, 16, Tile::Background(Rect::new_unwrap(16 * 8, 16 * 9, 16, 16)));
-    layer.set_tile(3, 16, Tile::Background(Rect::new_unwrap(16 * 10, 16 * 8, 16, 16)));
+    layer.set_tile(1, 16, Tile::Background(Rect::new(16 * 8, 16 * 8, 16, 16)));
+    layer.set_tile(2, 16, Tile::Background(Rect::new(16 * 8, 16 * 9, 16, 16)));
+    layer.set_tile(3, 16, Tile::Background(Rect::new(16 * 10, 16 * 8, 16, 16)));
 
-    layer.set_tile(0, 17, Tile::Background(Rect::new_unwrap(16 * 8, 16 * 8, 16, 16)));
-    layer.set_tile(1, 17, Tile::Background(Rect::new_unwrap(16 * 8, 16 * 9, 16, 16)));
-    layer.set_tile(2, 17, Tile::Background(Rect::new_unwrap(16 * 9, 16 * 9, 16, 16)));
-    layer.set_tile(3, 17, Tile::Background(Rect::new_unwrap(16 * 8, 16 * 9, 16, 16)));
-    layer.set_tile(4, 17, Tile::Background(Rect::new_unwrap(16 * 10, 16 * 8, 16, 16)));
-
-
-    layer.set_tile(11, 17, Tile::Background(Rect::new_unwrap(16 * 11, 16 * 9, 16, 16)));
-    layer.set_tile(12, 17, Tile::Background(Rect::new_unwrap(16 * 12, 16 * 9, 16, 16)));
-    layer.set_tile(13, 17, Tile::Background(Rect::new_unwrap(16 * 12, 16 * 9, 16, 16)));
-    layer.set_tile(14, 17, Tile::Background(Rect::new_unwrap(16 * 12, 16 * 9, 16, 16)));
-    layer.set_tile(15, 17, Tile::Background(Rect::new_unwrap(16 * 13, 16 * 9, 16, 16)));
+    layer.set_tile(0, 17, Tile::Background(Rect::new(16 * 8, 16 * 8, 16, 16)));
+    layer.set_tile(1, 17, Tile::Background(Rect::new(16 * 8, 16 * 9, 16, 16)));
+    layer.set_tile(2, 17, Tile::Background(Rect::new(16 * 9, 16 * 9, 16, 16)));
+    layer.set_tile(3, 17, Tile::Background(Rect::new(16 * 8, 16 * 9, 16, 16)));
+    layer.set_tile(4, 17, Tile::Background(Rect::new(16 * 10, 16 * 8, 16, 16)));
 
 
-    layer.set_tile(16, 14, Tile::Floor(Rect::new_unwrap(16 * 24, 16 * 0, 16, 16)));
+    layer.set_tile(11, 17, Tile::Background(Rect::new(16 * 11, 16 * 9, 16, 16)));
+    layer.set_tile(12, 17, Tile::Background(Rect::new(16 * 12, 16 * 9, 16, 16)));
+    layer.set_tile(13, 17, Tile::Background(Rect::new(16 * 12, 16 * 9, 16, 16)));
+    layer.set_tile(14, 17, Tile::Background(Rect::new(16 * 12, 16 * 9, 16, 16)));
+    layer.set_tile(15, 17, Tile::Background(Rect::new(16 * 13, 16 * 9, 16, 16)));
 
 
-    layer.set_tile(17, 16, Tile::Background(Rect::new_unwrap(16 * 9, 16 * 8, 16, 16)));
+    layer.set_tile(16, 14, Tile::Floor(Rect::new(16 * 24, 16 * 0, 16, 16)));
 
-    layer.set_tile(16, 17, Tile::Background(Rect::new_unwrap(16 * 8, 16 * 8, 16, 16)));
-    layer.set_tile(17, 17, Tile::Background(Rect::new_unwrap(16 * 8, 16 * 9, 16, 16)));
-    layer.set_tile(18, 17, Tile::Background(Rect::new_unwrap(16 * 10, 16 * 8, 16, 16)));
+
+    layer.set_tile(17, 16, Tile::Background(Rect::new(16 * 9, 16 * 8, 16, 16)));
+
+    layer.set_tile(16, 17, Tile::Background(Rect::new(16 * 8, 16 * 8, 16, 16)));
+    layer.set_tile(17, 17, Tile::Background(Rect::new(16 * 8, 16 * 9, 16, 16)));
+    layer.set_tile(18, 17, Tile::Background(Rect::new(16 * 10, 16 * 8, 16, 16)));
 
 
     layer.set_tile(20, 14, Tile::Static(&brick_sprite, true));
-    layer.set_tile(21, 14, Tile::Floor(Rect::new_unwrap(16 * 24, 16 * 0, 16, 16)));
+    layer.set_tile(21, 14, Tile::Floor(Rect::new(16 * 24, 16 * 0, 16, 16)));
     layer.set_tile(22, 14, Tile::Static(&brick_sprite, true));
-    layer.set_tile(23, 14, Tile::Floor(Rect::new_unwrap(16 * 24, 16 * 0, 16, 16)));
+    layer.set_tile(23, 14, Tile::Floor(Rect::new(16 * 24, 16 * 0, 16, 16)));
     layer.set_tile(24, 14, Tile::Static(&brick_sprite, true));
 
 
-    layer.set_tile(22, 10, Tile::Floor(Rect::new_unwrap(16 * 24, 16 * 0, 16, 16)));
+    layer.set_tile(22, 10, Tile::Floor(Rect::new(16 * 24, 16 * 0, 16, 16)));
 
 
-    layer.set_tile(19, 7, Tile::Floor(Rect::new_unwrap(16 * 0, 16 * 20, 16, 16)));
-    layer.set_tile(20, 7, Tile::Floor(Rect::new_unwrap(16 * 1, 16 * 20, 16, 16)));
-    layer.set_tile(21, 7, Tile::Floor(Rect::new_unwrap(16 * 2, 16 * 20, 16, 16)));
-    layer.set_tile(19, 8, Tile::Floor(Rect::new_unwrap(16 * 0, 16 * 21, 16, 16)));
-    layer.set_tile(20, 8, Tile::Floor(Rect::new_unwrap(16 * 1, 16 * 21, 16, 16)));
-    layer.set_tile(21, 8, Tile::Floor(Rect::new_unwrap(16 * 2, 16 * 21, 16, 16)));
+    layer.set_tile(19, 7, Tile::Floor(Rect::new(16 * 0, 16 * 20, 16, 16)));
+    layer.set_tile(20, 7, Tile::Floor(Rect::new(16 * 1, 16 * 20, 16, 16)));
+    layer.set_tile(21, 7, Tile::Floor(Rect::new(16 * 2, 16 * 20, 16, 16)));
+    layer.set_tile(19, 8, Tile::Floor(Rect::new(16 * 0, 16 * 21, 16, 16)));
+    layer.set_tile(20, 8, Tile::Floor(Rect::new(16 * 1, 16 * 21, 16, 16)));
+    layer.set_tile(21, 8, Tile::Floor(Rect::new(16 * 2, 16 * 21, 16, 16)));
 
 
-    layer.set_tile(23, 17, Tile::Background(Rect::new_unwrap(16 * 11, 16 * 9, 16, 16)));
-    layer.set_tile(24, 17, Tile::Background(Rect::new_unwrap(16 * 12, 16 * 9, 16, 16)));
-    layer.set_tile(25, 17, Tile::Background(Rect::new_unwrap(16 * 13, 16 * 9, 16, 16)));
+    layer.set_tile(23, 17, Tile::Background(Rect::new(16 * 11, 16 * 9, 16, 16)));
+    layer.set_tile(24, 17, Tile::Background(Rect::new(16 * 12, 16 * 9, 16, 16)));
+    layer.set_tile(25, 17, Tile::Background(Rect::new(16 * 13, 16 * 9, 16, 16)));
 
 
-    layer.set_tile(28, 16, Tile::Floor(Rect::new_unwrap(16 * 0, 16 * 8, 16, 16)));
-    layer.set_tile(29, 16, Tile::Floor(Rect::new_unwrap(16 * 1, 16 * 8, 16, 16)));
-    layer.set_tile(28, 17, Tile::Floor(Rect::new_unwrap(16 * 0, 16 * 9, 16, 16)));
-    layer.set_tile(29, 17, Tile::Floor(Rect::new_unwrap(16 * 1, 16 * 9, 16, 16)));
+    layer.set_tile(28, 16, Tile::Floor(Rect::new(16 * 0, 16 * 8, 16, 16)));
+    layer.set_tile(29, 16, Tile::Floor(Rect::new(16 * 1, 16 * 8, 16, 16)));
+    layer.set_tile(28, 17, Tile::Floor(Rect::new(16 * 0, 16 * 9, 16, 16)));
+    layer.set_tile(29, 17, Tile::Floor(Rect::new(16 * 1, 16 * 9, 16, 16)));
 
 
-    layer.set_tile(38, 15, Tile::Floor(Rect::new_unwrap(16 * 0, 16 * 8, 16, 16)));
-    layer.set_tile(39, 15, Tile::Floor(Rect::new_unwrap(16 * 1, 16 * 8, 16, 16)));
-    layer.set_tile(38, 16, Tile::Floor(Rect::new_unwrap(16 * 0, 16 * 9, 16, 16)));
-    layer.set_tile(39, 16, Tile::Floor(Rect::new_unwrap(16 * 1, 16 * 9, 16, 16)));
-    layer.set_tile(38, 17, Tile::Floor(Rect::new_unwrap(16 * 0, 16 * 9, 16, 16)));
-    layer.set_tile(39, 17, Tile::Floor(Rect::new_unwrap(16 * 1, 16 * 9, 16, 16)));
+    layer.set_tile(38, 15, Tile::Floor(Rect::new(16 * 0, 16 * 8, 16, 16)));
+    layer.set_tile(39, 15, Tile::Floor(Rect::new(16 * 1, 16 * 8, 16, 16)));
+    layer.set_tile(38, 16, Tile::Floor(Rect::new(16 * 0, 16 * 9, 16, 16)));
+    layer.set_tile(39, 16, Tile::Floor(Rect::new(16 * 1, 16 * 9, 16, 16)));
+    layer.set_tile(38, 17, Tile::Floor(Rect::new(16 * 0, 16 * 9, 16, 16)));
+    layer.set_tile(39, 17, Tile::Floor(Rect::new(16 * 1, 16 * 9, 16, 16)));
 
 
-    layer.set_tile(41, 17, Tile::Background(Rect::new_unwrap(16 * 11, 16 * 9, 16, 16)));
-    layer.set_tile(42, 17, Tile::Background(Rect::new_unwrap(16 * 12, 16 * 9, 16, 16)));
-    layer.set_tile(43, 17, Tile::Background(Rect::new_unwrap(16 * 12, 16 * 9, 16, 16)));
-    layer.set_tile(44, 17, Tile::Background(Rect::new_unwrap(16 * 13, 16 * 9, 16, 16)));
+    layer.set_tile(41, 17, Tile::Background(Rect::new(16 * 11, 16 * 9, 16, 16)));
+    layer.set_tile(42, 17, Tile::Background(Rect::new(16 * 12, 16 * 9, 16, 16)));
+    layer.set_tile(43, 17, Tile::Background(Rect::new(16 * 12, 16 * 9, 16, 16)));
+    layer.set_tile(44, 17, Tile::Background(Rect::new(16 * 13, 16 * 9, 16, 16)));
 
 
-    layer.set_tile(46, 14, Tile::Floor(Rect::new_unwrap(16 * 0, 16 * 8, 16, 16)));
-    layer.set_tile(47, 14, Tile::Floor(Rect::new_unwrap(16 * 1, 16 * 8, 16, 16)));
-    layer.set_tile(46, 15, Tile::Floor(Rect::new_unwrap(16 * 0, 16 * 9, 16, 16)));
-    layer.set_tile(47, 15, Tile::Floor(Rect::new_unwrap(16 * 1, 16 * 9, 16, 16)));
-    layer.set_tile(46, 16, Tile::Floor(Rect::new_unwrap(16 * 0, 16 * 9, 16, 16)));
-    layer.set_tile(47, 16, Tile::Floor(Rect::new_unwrap(16 * 1, 16 * 9, 16, 16)));
-    layer.set_tile(46, 17, Tile::Floor(Rect::new_unwrap(16 * 0, 16 * 9, 16, 16)));
-    layer.set_tile(47, 17, Tile::Floor(Rect::new_unwrap(16 * 1, 16 * 9, 16, 16)));
+    layer.set_tile(46, 14, Tile::Floor(Rect::new(16 * 0, 16 * 8, 16, 16)));
+    layer.set_tile(47, 14, Tile::Floor(Rect::new(16 * 1, 16 * 8, 16, 16)));
+    layer.set_tile(46, 15, Tile::Floor(Rect::new(16 * 0, 16 * 9, 16, 16)));
+    layer.set_tile(47, 15, Tile::Floor(Rect::new(16 * 1, 16 * 9, 16, 16)));
+    layer.set_tile(46, 16, Tile::Floor(Rect::new(16 * 0, 16 * 9, 16, 16)));
+    layer.set_tile(47, 16, Tile::Floor(Rect::new(16 * 1, 16 * 9, 16, 16)));
+    layer.set_tile(46, 17, Tile::Floor(Rect::new(16 * 0, 16 * 9, 16, 16)));
+    layer.set_tile(47, 17, Tile::Floor(Rect::new(16 * 1, 16 * 9, 16, 16)));
 
 
-    layer.set_tile(50, 15, Tile::Background(Rect::new_unwrap(16 * 9, 16 * 8, 16, 16)));
+    layer.set_tile(50, 15, Tile::Background(Rect::new(16 * 9, 16 * 8, 16, 16)));
 
-    layer.set_tile(49, 16, Tile::Background(Rect::new_unwrap(16 * 8, 16 * 8, 16, 16)));
-    layer.set_tile(50, 16, Tile::Background(Rect::new_unwrap(16 * 8, 16 * 9, 16, 16)));
-    layer.set_tile(51, 16, Tile::Background(Rect::new_unwrap(16 * 10, 16 * 8, 16, 16)));
+    layer.set_tile(49, 16, Tile::Background(Rect::new(16 * 8, 16 * 8, 16, 16)));
+    layer.set_tile(50, 16, Tile::Background(Rect::new(16 * 8, 16 * 9, 16, 16)));
+    layer.set_tile(51, 16, Tile::Background(Rect::new(16 * 10, 16 * 8, 16, 16)));
 
-    layer.set_tile(48, 17, Tile::Background(Rect::new_unwrap(16 * 8, 16 * 8, 16, 16)));
-    layer.set_tile(49, 17, Tile::Background(Rect::new_unwrap(16 * 8, 16 * 9, 16, 16)));
-    layer.set_tile(50, 17, Tile::Background(Rect::new_unwrap(16 * 9, 16 * 9, 16, 16)));
-    layer.set_tile(51, 17, Tile::Background(Rect::new_unwrap(16 * 8, 16 * 9, 16, 16)));
-    layer.set_tile(52, 17, Tile::Background(Rect::new_unwrap(16 * 10, 16 * 8, 16, 16)));
+    layer.set_tile(48, 17, Tile::Background(Rect::new(16 * 8, 16 * 8, 16, 16)));
+    layer.set_tile(49, 17, Tile::Background(Rect::new(16 * 8, 16 * 9, 16, 16)));
+    layer.set_tile(50, 17, Tile::Background(Rect::new(16 * 9, 16 * 9, 16, 16)));
+    layer.set_tile(51, 17, Tile::Background(Rect::new(16 * 8, 16 * 9, 16, 16)));
+    layer.set_tile(52, 17, Tile::Background(Rect::new(16 * 10, 16 * 8, 16, 16)));
 
 
     for x in 0..212 {
@@ -277,15 +285,15 @@ fn main() {
 
     let mut camera = Camera::new(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, layer.to_rect());
 
-    let mut current : u64;
-    let mut elapsed : u64;
-    let mut previous : u64 = time::precise_time_ns() / 1_000_000;
-    let mut lag : u64 = 0;
+    let mut current : f64;
+    let mut elapsed : f64;
+    let mut previous : f64 = timer::current_time();
+    let mut lag : f64 = 0.0;
 
     let mut event_pump = sdl_context.event_pump().unwrap();
 
     'main : loop {
-        current = time::precise_time_ns() / 1_000_000;
+        current = timer::current_time();
         elapsed = current - previous;
         previous = current;
         lag += elapsed;
@@ -321,7 +329,7 @@ fn main() {
             };
 
             player.dx = a * PLAYER_SPEED_X + (1.0 - a) * player.dx;
-            player.flip = (false, false);
+            player.flip_horizontal = false;
         } else if keyboard.is_held(Keycode::Left) && (player.dx <= 0.0 || player.on_ground) {
             let a = if player.dx < 0.0 {
                 PLAYER_ACCELERATION_X_START
@@ -330,7 +338,7 @@ fn main() {
             };
 
             player.dx = a * -PLAYER_SPEED_X + (1.0 - a) * player.dx;
-            player.flip = (true, false);
+            player.flip_horizontal = true;
         } else if player.on_ground {
             player.dx = (1.0 - PLAYER_ACCELERATION_X_STOP) * player.dx;
 
@@ -518,7 +526,7 @@ fn main() {
                 }
             }
 
-            player.update(elapsed);
+            player.update();
 
             camera.center(&player.to_rect());
 
@@ -529,7 +537,7 @@ fn main() {
         renderer.clear();
 
         layer.for_each_intersecting(&camera.to_rect(), |tile: &Tile, position: &Rect| {
-            let object = camera_relative_rect(&camera.to_rect(), position);
+            let object = camera.to_relative_rect(position);
 
             match *tile {
                 Tile::Background(src) => {
@@ -538,23 +546,17 @@ fn main() {
                 Tile::Floor(src) => {
                     renderer.copy(&world_sprites, Some(src), Some(object));
                 },
-                Tile::Static(ref sprite, _) => sprite.render(&mut renderer, &object),
+                Tile::Static(ref sprite, _) => sprite.render(lag / MS_PER_UPDATE, &mut renderer, &object),
                 _ => ()
             }
         });
 
-        let player_rect = camera_relative_rect(&camera.to_rect(), &player.to_rect());
+        let player_rect = camera.to_relative_rect(&player.to_rect());
 
-        player.render(&mut renderer, &player_rect);
+        player.render(lag / MS_PER_UPDATE, &mut renderer, &player_rect);
 
         renderer.present();
 
-        sleep(std::time::Duration::from_millis(5));
+        // sleep(std::time::Duration::from_millis(5));
     }
-
-    sdl2_image::quit();
-}
-
-fn camera_relative_rect(camera: &Rect, other: &Rect) -> Rect {
-    Rect::new_unwrap(other.x() - camera.x(), other.y() - camera.y(), other.width(), other.height())
 }

@@ -52,14 +52,14 @@ impl<T> Layer<T> where T: Clone {
         let x2 = (rect.x() + rect.width() as i32 - 1) / self.tile_width as i32;
         let y2 = (rect.y() + rect.height() as i32 - 1) / self.tile_height as i32;
 
-        Some(Rect::new_unwrap(x1, y1, (x2 - x1 + 1) as u32, (y2 - y1 + 1) as u32))
+        Some(Rect::new(x1, y1, (x2 - x1 + 1) as u32, (y2 - y1 + 1) as u32))
     }
 
     pub fn for_each_intersecting<F: FnMut(&T, &Rect)>(&self, rect: &Rect, mut f: F) {
         if let Some(intersect) = self.find_intersecting(rect) {
             for y in intersect.y()..(intersect.y() + intersect.height() as i32)  {
                 for x in intersect.x()..(intersect.x() + intersect.width() as i32) {
-                    let position = Rect::new_unwrap(x * self.tile_width as i32, y * self.tile_height as i32, self.tile_width, self.tile_height);
+                    let position = Rect::new(x * self.tile_width as i32, y * self.tile_height as i32, self.tile_width, self.tile_height);
 
                     f(self.get_tile(x, y).unwrap(), &position);
                 }
@@ -68,7 +68,7 @@ impl<T> Layer<T> where T: Clone {
     }
 
     pub fn to_rect(&self) -> Rect {
-        Rect::new_unwrap(0, 0, self.width * self.tile_width, self.height * self.tile_height)
+        Rect::new(0, 0, self.width * self.tile_width, self.height * self.tile_height)
     }
 }
 
@@ -84,54 +84,54 @@ mod tests {
         let layer = Layer::new(3, 3, 3, 3, ());
 
         // out of bounds.
-        assert_eq!(layer.find_intersecting(&Rect::new_unwrap(-1,  1, 1, 1)), None);
-        assert_eq!(layer.find_intersecting(&Rect::new_unwrap( 1, -1, 1, 1)), None);
-        assert_eq!(layer.find_intersecting(&Rect::new_unwrap(-1, -1, 1, 1)), None);
+        assert_eq!(layer.find_intersecting(&Rect::new(-1,  1, 1, 1)), None);
+        assert_eq!(layer.find_intersecting(&Rect::new( 1, -1, 1, 1)), None);
+        assert_eq!(layer.find_intersecting(&Rect::new(-1, -1, 1, 1)), None);
 
-        assert_eq!(layer.find_intersecting(&Rect::new_unwrap(9, 7, 1, 1)), None);
-        assert_eq!(layer.find_intersecting(&Rect::new_unwrap(7, 9, 1, 1)), None);
-        assert_eq!(layer.find_intersecting(&Rect::new_unwrap(9, 9, 1, 1)), None);
+        assert_eq!(layer.find_intersecting(&Rect::new(9, 7, 1, 1)), None);
+        assert_eq!(layer.find_intersecting(&Rect::new(7, 9, 1, 1)), None);
+        assert_eq!(layer.find_intersecting(&Rect::new(9, 9, 1, 1)), None);
 
         // middle of tile.
-        assert_eq!(layer.find_intersecting(&Rect::new_unwrap(1, 1, 1, 1)), Some(Rect::new_unwrap(0, 0, 1, 1)));
-        assert_eq!(layer.find_intersecting(&Rect::new_unwrap(4, 1, 1, 1)), Some(Rect::new_unwrap(1, 0, 1, 1)));
-        assert_eq!(layer.find_intersecting(&Rect::new_unwrap(7, 1, 1, 1)), Some(Rect::new_unwrap(2, 0, 1, 1)));
+        assert_eq!(layer.find_intersecting(&Rect::new(1, 1, 1, 1)), Some(Rect::new(0, 0, 1, 1)));
+        assert_eq!(layer.find_intersecting(&Rect::new(4, 1, 1, 1)), Some(Rect::new(1, 0, 1, 1)));
+        assert_eq!(layer.find_intersecting(&Rect::new(7, 1, 1, 1)), Some(Rect::new(2, 0, 1, 1)));
 
-        assert_eq!(layer.find_intersecting(&Rect::new_unwrap(1, 4, 1, 1)), Some(Rect::new_unwrap(0, 1, 1, 1)));
-        assert_eq!(layer.find_intersecting(&Rect::new_unwrap(4, 4, 1, 1)), Some(Rect::new_unwrap(1, 1, 1, 1)));
-        assert_eq!(layer.find_intersecting(&Rect::new_unwrap(7, 4, 1, 1)), Some(Rect::new_unwrap(2, 1, 1, 1)));
+        assert_eq!(layer.find_intersecting(&Rect::new(1, 4, 1, 1)), Some(Rect::new(0, 1, 1, 1)));
+        assert_eq!(layer.find_intersecting(&Rect::new(4, 4, 1, 1)), Some(Rect::new(1, 1, 1, 1)));
+        assert_eq!(layer.find_intersecting(&Rect::new(7, 4, 1, 1)), Some(Rect::new(2, 1, 1, 1)));
 
-        assert_eq!(layer.find_intersecting(&Rect::new_unwrap(1, 7, 1, 1)), Some(Rect::new_unwrap(0, 2, 1, 1)));
-        assert_eq!(layer.find_intersecting(&Rect::new_unwrap(4, 7, 1, 1)), Some(Rect::new_unwrap(1, 2, 1, 1)));
-        assert_eq!(layer.find_intersecting(&Rect::new_unwrap(7, 7, 1, 1)), Some(Rect::new_unwrap(2, 2, 1, 1)));
+        assert_eq!(layer.find_intersecting(&Rect::new(1, 7, 1, 1)), Some(Rect::new(0, 2, 1, 1)));
+        assert_eq!(layer.find_intersecting(&Rect::new(4, 7, 1, 1)), Some(Rect::new(1, 2, 1, 1)));
+        assert_eq!(layer.find_intersecting(&Rect::new(7, 7, 1, 1)), Some(Rect::new(2, 2, 1, 1)));
 
         // interlaps 4 tiles.
-        assert_eq!(layer.find_intersecting(&Rect::new_unwrap(2, 2, 2, 2)), Some(Rect::new_unwrap(0, 0, 2, 2)));
-        assert_eq!(layer.find_intersecting(&Rect::new_unwrap(5, 2, 2, 2)), Some(Rect::new_unwrap(1, 0, 2, 2)));
-        assert_eq!(layer.find_intersecting(&Rect::new_unwrap(2, 5, 2, 2)), Some(Rect::new_unwrap(0, 1, 2, 2)));
-        assert_eq!(layer.find_intersecting(&Rect::new_unwrap(5, 5, 2, 2)), Some(Rect::new_unwrap(1, 1, 2, 2)));
+        assert_eq!(layer.find_intersecting(&Rect::new(2, 2, 2, 2)), Some(Rect::new(0, 0, 2, 2)));
+        assert_eq!(layer.find_intersecting(&Rect::new(5, 2, 2, 2)), Some(Rect::new(1, 0, 2, 2)));
+        assert_eq!(layer.find_intersecting(&Rect::new(2, 5, 2, 2)), Some(Rect::new(0, 1, 2, 2)));
+        assert_eq!(layer.find_intersecting(&Rect::new(5, 5, 2, 2)), Some(Rect::new(1, 1, 2, 2)));
 
         // interlaps 2 tiles horizontal.
-        assert_eq!(layer.find_intersecting(&Rect::new_unwrap(2, 1, 2, 1)), Some(Rect::new_unwrap(0, 0, 2, 1)));
-        assert_eq!(layer.find_intersecting(&Rect::new_unwrap(5, 1, 2, 1)), Some(Rect::new_unwrap(1, 0, 2, 1)));
+        assert_eq!(layer.find_intersecting(&Rect::new(2, 1, 2, 1)), Some(Rect::new(0, 0, 2, 1)));
+        assert_eq!(layer.find_intersecting(&Rect::new(5, 1, 2, 1)), Some(Rect::new(1, 0, 2, 1)));
 
-        assert_eq!(layer.find_intersecting(&Rect::new_unwrap(2, 4, 2, 1)), Some(Rect::new_unwrap(0, 1, 2, 1)));
-        assert_eq!(layer.find_intersecting(&Rect::new_unwrap(5, 4, 2, 1)), Some(Rect::new_unwrap(1, 1, 2, 1)));
+        assert_eq!(layer.find_intersecting(&Rect::new(2, 4, 2, 1)), Some(Rect::new(0, 1, 2, 1)));
+        assert_eq!(layer.find_intersecting(&Rect::new(5, 4, 2, 1)), Some(Rect::new(1, 1, 2, 1)));
 
-        assert_eq!(layer.find_intersecting(&Rect::new_unwrap(2, 7, 2, 1)), Some(Rect::new_unwrap(0, 2, 2, 1)));
-        assert_eq!(layer.find_intersecting(&Rect::new_unwrap(5, 7, 2, 1)), Some(Rect::new_unwrap(1, 2, 2, 1)));
+        assert_eq!(layer.find_intersecting(&Rect::new(2, 7, 2, 1)), Some(Rect::new(0, 2, 2, 1)));
+        assert_eq!(layer.find_intersecting(&Rect::new(5, 7, 2, 1)), Some(Rect::new(1, 2, 2, 1)));
 
         // interlaps 2 tiles vertical.
-        assert_eq!(layer.find_intersecting(&Rect::new_unwrap(1, 2, 1, 2)), Some(Rect::new_unwrap(0, 0, 1, 2)));
-        assert_eq!(layer.find_intersecting(&Rect::new_unwrap(1, 5, 1, 2)), Some(Rect::new_unwrap(0, 1, 1, 2)));
+        assert_eq!(layer.find_intersecting(&Rect::new(1, 2, 1, 2)), Some(Rect::new(0, 0, 1, 2)));
+        assert_eq!(layer.find_intersecting(&Rect::new(1, 5, 1, 2)), Some(Rect::new(0, 1, 1, 2)));
 
-        assert_eq!(layer.find_intersecting(&Rect::new_unwrap(4, 2, 1, 2)), Some(Rect::new_unwrap(1, 0, 1, 2)));
-        assert_eq!(layer.find_intersecting(&Rect::new_unwrap(4, 5, 1, 2)), Some(Rect::new_unwrap(1, 1, 1, 2)));
+        assert_eq!(layer.find_intersecting(&Rect::new(4, 2, 1, 2)), Some(Rect::new(1, 0, 1, 2)));
+        assert_eq!(layer.find_intersecting(&Rect::new(4, 5, 1, 2)), Some(Rect::new(1, 1, 1, 2)));
 
-        assert_eq!(layer.find_intersecting(&Rect::new_unwrap(7, 2, 1, 2)), Some(Rect::new_unwrap(2, 0, 1, 2)));
-        assert_eq!(layer.find_intersecting(&Rect::new_unwrap(7, 5, 1, 2)), Some(Rect::new_unwrap(2, 1, 1, 2)));
+        assert_eq!(layer.find_intersecting(&Rect::new(7, 2, 1, 2)), Some(Rect::new(2, 0, 1, 2)));
+        assert_eq!(layer.find_intersecting(&Rect::new(7, 5, 1, 2)), Some(Rect::new(2, 1, 1, 2)));
 
         // exactly one tile.
-        assert_eq!(layer.find_intersecting(&Rect::new_unwrap(0, 0, 3, 3)), Some(Rect::new_unwrap(0, 0, 1, 1)));
+        assert_eq!(layer.find_intersecting(&Rect::new(0, 0, 3, 3)), Some(Rect::new(0, 0, 1, 1)));
     }
 }

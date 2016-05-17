@@ -37,6 +37,6 @@ impl Player {
     }
 
     pub fn to_rect(&self) -> Rect {
-        Rect::new_unwrap(self.x as i32, self.y as i32, self.w, self.h)
+        Rect::new(self.x as i32, self.y as i32, self.w, self.h)
     }
 }

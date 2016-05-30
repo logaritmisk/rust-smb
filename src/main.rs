@@ -1,10 +1,8 @@
-extern crate time;
 extern crate sdl2;
 extern crate sdl2_image;
 
 
 use std::path::Path;
-// use std::thread::sleep;
 use std::cell::RefCell;
 use std::collections::HashMap;
 
@@ -15,12 +13,12 @@ use sdl2::pixels::Color;
 use sdl2::render::{Renderer, Texture};
 
 
-// use timer::current_time;
 use tile::Layer;
 use camera::Camera;
 // use player::Player;
 use keyboard::KeyboardHandler;
 use sprite::{Sprite, StaticSprite, AnimatedSprite};
+use timer::Timer;
 
 
 mod timer;
@@ -142,19 +140,6 @@ enum Tile<'a> {
     Floor(Rect)
 }
 
-struct TextureManager<'a> {
-    renderer: &'a mut Renderer<'a>,
-    textures: HashMap<&'static str, Texture>
-}
-
-impl<'a> TextureManager<'a> {
-    fn new(renderer: &'a mut Renderer<'a>) -> TextureManager<'a> {
-        TextureManager {
-            renderer: renderer,
-            textures: HashMap::new()
-        }
-    }
-}
 
 fn main() {
     let sdl_context = sdl2::init().unwrap();
@@ -165,14 +150,14 @@ fn main() {
     let window = video_subsystem.window("Super Matte Bros", SCREEN_WIDTH, SCREEN_HEIGHT).position_centered().build().unwrap();
     let mut renderer = window.renderer().software().build().unwrap();
 
-    // let textures = TextureManager::new(&mut renderer);
-
     let world_sprites = renderer.load_texture(&Path::new("gfx/world.png")).unwrap();
 
     let floor_sprite = StaticSprite::new(&world_sprites, 16 * 0, 16 * 0);
     let brick_sprite = StaticSprite::new(&world_sprites, 16 * 1, 16 * 0);
 
     let player_sprites = renderer.load_texture(&Path::new("gfx/mario.png")).unwrap();
+
+    let timer = Timer::new();
 
     let mut player = GameObject::new(390.0, 390.0, Box::new(PlayerPhysicsComponent), Box::new(PlayerGraphicsComponent::new(&player_sprites)));
 
@@ -285,16 +270,17 @@ fn main() {
 
     let mut camera = Camera::new(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, layer.to_rect());
 
-    let mut current : f64;
-    let mut elapsed : f64;
-    let mut previous : f64 = timer::current_time();
-    let mut lag : f64 = 0.0;
+    let previous = timer.current_time();
+
+    let mut previous : f64 = 0.0;
+    let mut lag = 0.0;
 
     let mut event_pump = sdl_context.event_pump().unwrap();
 
     'main : loop {
-        current = timer::current_time();
-        elapsed = current - previous;
+        let current = timer.current_time();
+        let elapsed = current - previous;
+
         previous = current;
         lag += elapsed;
 
@@ -553,7 +539,7 @@ fn main() {
 
         let player_rect = camera.to_relative_rect(&player.to_rect());
 
-        player.render(lag / MS_PER_UPDATE, &mut renderer, &player_rect);
+        player.render(elapsed, &mut renderer, &player_rect);
 
         renderer.present();
 

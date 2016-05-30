@@ -4,7 +4,6 @@ version = "0.0.1"
 authors = ["logaritmisk <anders.e.olsson@gmail.com>"]
 
 [dependencies]
-time = "0.1.35"
 sdl2 = "0.16.0"
 sdl2_image = "0.16.0"
 

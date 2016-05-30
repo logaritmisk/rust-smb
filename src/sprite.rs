@@ -69,7 +69,7 @@ impl<'a> Sprite for AnimatedSprite<'a> {
         let mut time = self.time.borrow_mut();
         let mut frame = self.frame.borrow_mut();
 
-        *time += 10.0 + elapsed;
+        *time += elapsed;
         *frame += (*time / self.frame_time) as u32;
         *time %= self.frame_time;
         *frame %= self.frames;

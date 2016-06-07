@@ -17,7 +17,8 @@ impl Updatable for PlayerPhysicsComponent {
 pub struct PlayerGraphicsComponent<'a> {
     flip_horizontal: Cell<bool>,
     sprite_standing: RefCell<StaticSprite<'a>>,
-    sprite_running: RefCell<AnimatedSprite<'a>>
+    sprite_running: RefCell<AnimatedSprite<'a>>,
+    sprite_jumping: RefCell<StaticSprite<'a>>
 }
 
 impl<'a> PlayerGraphicsComponent<'a> {
@@ -25,14 +26,21 @@ impl<'a> PlayerGraphicsComponent<'a> {
         PlayerGraphicsComponent {
             flip_horizontal: Cell::new(false),
             sprite_standing: RefCell::new(StaticSprite::new(&texture, 80, 32)),
-            sprite_running: RefCell::new(AnimatedSprite::new(&texture, 96, 32, 3, 10.0))
+            sprite_running: RefCell::new(AnimatedSprite::new(&texture, 96, 32, 3, 10.0)),
+            sprite_jumping: RefCell::new(StaticSprite::new(&texture, 160, 32))
         }
     }
 }
 
 impl<'a> Renderable for PlayerGraphicsComponent<'a> {
     fn render(&self, object: &GameObject, elapsed: f64, renderer: &mut Renderer, destination: &Rect) {
-        if object.dx == 0.0 {
+        if !object.on_ground {
+            let mut sprite = self.sprite_jumping.borrow_mut();
+
+            sprite.flip_horizontal = self.flip_horizontal.get();
+
+            sprite.render(elapsed, renderer, destination);
+        } else if object.dx == 0.0 {
             let mut sprite = self.sprite_standing.borrow_mut();
 
             sprite.flip_horizontal = self.flip_horizontal.get();

@@ -53,7 +53,7 @@ fn main() {
     let sdl_context = sdl2::init().unwrap();
     let video_subsystem = sdl_context.video().unwrap();
 
-    let _image_context = sdl2_image::init(sdl2_image::INIT_PNG).unwrap();
+    let _ = sdl2_image::init(sdl2_image::INIT_PNG).unwrap();
 
     let window = video_subsystem.window("Super Matte Bros", SCREEN_WIDTH, SCREEN_HEIGHT).position_centered().build().unwrap();
     let mut renderer = window.renderer().software().build().unwrap();
@@ -84,7 +84,6 @@ fn main() {
     layer.set_tile(2, 17, Tile::Background(Rect::new(16 * 9, 16 * 9, 16, 16)));
     layer.set_tile(3, 17, Tile::Background(Rect::new(16 * 8, 16 * 9, 16, 16)));
     layer.set_tile(4, 17, Tile::Background(Rect::new(16 * 10, 16 * 8, 16, 16)));
-
 
     layer.set_tile(11, 17, Tile::Background(Rect::new(16 * 11, 16 * 9, 16, 16)));
     layer.set_tile(12, 17, Tile::Background(Rect::new(16 * 12, 16 * 9, 16, 16)));
@@ -164,9 +163,7 @@ fn main() {
 
     let mut camera = Camera::new(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, layer.to_rect());
 
-    let previous = timer.current_time();
-
-    let mut previous : f64 = 0.0;
+    let mut previous = timer.current_time();
     let mut lag = 0.0;
 
     let mut event_pump = sdl_context.event_pump().unwrap();

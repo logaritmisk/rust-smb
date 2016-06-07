@@ -72,7 +72,6 @@ impl<T> Layer<T> where T: Clone {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::Layer;

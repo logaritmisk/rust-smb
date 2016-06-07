@@ -30,8 +30,8 @@ impl<'a> StaticSprite<'a> {
 }
 
 impl<'a> Sprite for StaticSprite<'a> {
-    fn render(&self, elapsed: f64, drawer: &mut Renderer, destination: &Rect) {
-        drawer.copy_ex(self.texture, Some(Rect::new(self.x, self.y, 16, 16)), Some(*destination), 0.0, None, self.flip_horizontal, self.flip_vertical);
+    fn render(&self, _: f64, drawer: &mut Renderer, destination: &Rect) {
+        let _ = drawer.copy_ex(self.texture, Some(Rect::new(self.x, self.y, 16, 16)), Some(*destination), 0.0, None, self.flip_horizontal, self.flip_vertical);
     }
 }
 
@@ -76,6 +76,6 @@ impl<'a> Sprite for AnimatedSprite<'a> {
 
         let x = self.x + (*frame * 16) as i32;
 
-        drawer.copy_ex(self.texture, Some(Rect::new(x, self.y, 16, 16)), Some(*destination), 0.0, None, self.flip_horizontal, self.flip_vertical);
+        let _ = drawer.copy_ex(self.texture, Some(Rect::new(x, self.y, 16, 16)), Some(*destination), 0.0, None, self.flip_horizontal, self.flip_vertical);
     }
 }

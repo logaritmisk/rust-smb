@@ -1,10 +1,9 @@
+#[deny(trivial_casts, trivial_numeric_casts)]
 extern crate sdl2;
 extern crate sdl2_image;
 
-
 use std::path::Path;
 use std::cell::{Cell, RefCell};
-use std::collections::HashMap;
 
 use sdl2_image::LoadTexture;
 use sdl2::rect::Rect;
@@ -15,7 +14,6 @@ use sdl2::render::{Renderer, Texture};
 
 use tile::Layer;
 use camera::Camera;
-// use player::Player;
 use keyboard::KeyboardHandler;
 use sprite::{Sprite, StaticSprite, AnimatedSprite};
 use timer::Timer;
@@ -24,10 +22,8 @@ use timer::Timer;
 mod timer;
 mod tile;
 mod camera;
-mod player;
 mod keyboard;
 mod sprite;
-
 
 const SCREEN_WIDTH : u32 = 960;
 const SCREEN_HEIGHT : u32 = 640;
@@ -43,7 +39,6 @@ const PLAYER_THRESHOLD_X : f32 = 0.2;
 const PLAYER_ACCELERATION_X_START : f32 = 0.02;
 const PLAYER_ACCELERATION_X_STOP : f32 = 0.15;
 const PLAYER_ACCELERATION_X_CHANGE : f32 = 0.06;
-
 
 struct GameObject<'a> {
     pub x: f32,
@@ -95,14 +90,12 @@ trait Renderable {
     fn render(&self, &GameObject, f64, &mut Renderer, &Rect);
 }
 
-
 struct PlayerPhysicsComponent;
 
 impl Updatable for PlayerPhysicsComponent {
-    fn update(&self, object: &GameObject) {
+    fn update(&self, _: &GameObject) {
     }
 }
-
 
 struct PlayerGraphicsComponent<'a> {
     flip_horizontal: Cell<bool>,
@@ -144,7 +137,6 @@ impl<'a> Renderable for PlayerGraphicsComponent<'a> {
     }
 }
 
-
 #[derive(Clone)]
 enum Tile<'a> {
     Empty,
@@ -152,7 +144,6 @@ enum Tile<'a> {
     Background(Rect),
     Floor(Rect)
 }
-
 
 fn main() {
     let sdl_context = sdl2::init().unwrap();
@@ -553,7 +544,5 @@ fn main() {
         player.render(elapsed, &mut renderer, &player_rect);
 
         renderer.present();
-
-        // sleep(std::time::Duration::from_millis(5));
     }
 }

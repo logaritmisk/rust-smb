@@ -3,21 +3,19 @@ extern crate sdl2;
 extern crate sdl2_image;
 
 use std::path::Path;
-use std::cell::{Cell, RefCell};
 
 use sdl2_image::LoadTexture;
 use sdl2::rect::Rect;
 use sdl2::keyboard::Keycode;
 use sdl2::pixels::Color;
-use sdl2::render::{Renderer, Texture};
 
 use tile::Layer;
 use camera::Camera;
 use keyboard::KeyboardHandler;
-use sprite::{Sprite, StaticSprite, AnimatedSprite};
+use sprite::{Sprite, StaticSprite};
 use timer::Timer;
 use game_object::GameObject;
-use component::{Updatable, Renderable};
+use player_components::{PlayerPhysicsComponent, PlayerGraphicsComponent};
 
 mod timer;
 mod tile;
@@ -26,6 +24,7 @@ mod keyboard;
 mod sprite;
 mod game_object;
 mod component;
+mod player_components;
 
 const SCREEN_WIDTH : u32 = 960;
 const SCREEN_HEIGHT : u32 = 640;
@@ -41,53 +40,6 @@ const PLAYER_THRESHOLD_X : f32 = 0.2;
 const PLAYER_ACCELERATION_X_START : f32 = 0.02;
 const PLAYER_ACCELERATION_X_STOP : f32 = 0.15;
 const PLAYER_ACCELERATION_X_CHANGE : f32 = 0.06;
-
-struct PlayerPhysicsComponent;
-
-impl Updatable for PlayerPhysicsComponent {
-    fn update(&self, _: &GameObject) {
-    }
-}
-
-struct PlayerGraphicsComponent<'a> {
-    flip_horizontal: Cell<bool>,
-    sprite_standing: RefCell<StaticSprite<'a>>,
-    sprite_running: RefCell<AnimatedSprite<'a>>
-}
-
-impl<'a> PlayerGraphicsComponent<'a> {
-    pub fn new(texture: &'a Texture) -> PlayerGraphicsComponent<'a> {
-        PlayerGraphicsComponent {
-            flip_horizontal: Cell::new(false),
-            sprite_standing: RefCell::new(StaticSprite::new(&texture, 80, 32)),
-            sprite_running: RefCell::new(AnimatedSprite::new(&texture, 96, 32, 3, 10.0))
-        }
-    }
-}
-
-impl<'a> Renderable for PlayerGraphicsComponent<'a> {
-    fn render(&self, object: &GameObject, elapsed: f64, renderer: &mut Renderer, destination: &Rect) {
-        if object.dx == 0.0 {
-            let mut sprite = self.sprite_standing.borrow_mut();
-
-            sprite.flip_horizontal = self.flip_horizontal.get();
-
-            sprite.render(elapsed, renderer, destination);
-        } else {
-            let mut sprite = self.sprite_running.borrow_mut();
-
-            if object.dx < 0.0 {
-                sprite.flip_horizontal = true;
-                self.flip_horizontal.set(true);
-            } else if object.dx > 0.0 {
-                sprite.flip_horizontal = false;
-                self.flip_horizontal.set(false);
-            }
-
-            sprite.render(elapsed, renderer, destination);
-        };
-    }
-}
 
 #[derive(Clone)]
 enum Tile<'a> {

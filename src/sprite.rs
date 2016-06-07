@@ -3,11 +3,9 @@ use std::cell::RefCell;
 use sdl2::render::{Texture, Renderer};
 use sdl2::rect::Rect;
 
-
 pub trait Sprite {
     fn render(&self, f64, &mut Renderer, &Rect);
 }
-
 
 pub struct StaticSprite<'a> {
     texture: &'a Texture,
@@ -34,7 +32,6 @@ impl<'a> Sprite for StaticSprite<'a> {
         let _ = drawer.copy_ex(self.texture, Some(Rect::new(self.x, self.y, 16, 16)), Some(*destination), 0.0, None, self.flip_horizontal, self.flip_vertical);
     }
 }
-
 
 pub struct AnimatedSprite<'a> {
     texture: &'a Texture,

@@ -11,19 +11,21 @@ use sdl2::keyboard::Keycode;
 use sdl2::pixels::Color;
 use sdl2::render::{Renderer, Texture};
 
-
 use tile::Layer;
 use camera::Camera;
 use keyboard::KeyboardHandler;
 use sprite::{Sprite, StaticSprite, AnimatedSprite};
 use timer::Timer;
-
+use game_object::GameObject;
+use component::{Updatable, Renderable};
 
 mod timer;
 mod tile;
 mod camera;
 mod keyboard;
 mod sprite;
+mod game_object;
+mod component;
 
 const SCREEN_WIDTH : u32 = 960;
 const SCREEN_HEIGHT : u32 = 640;
@@ -39,56 +41,6 @@ const PLAYER_THRESHOLD_X : f32 = 0.2;
 const PLAYER_ACCELERATION_X_START : f32 = 0.02;
 const PLAYER_ACCELERATION_X_STOP : f32 = 0.15;
 const PLAYER_ACCELERATION_X_CHANGE : f32 = 0.06;
-
-struct GameObject<'a> {
-    pub x: f32,
-    pub y: f32,
-    pub w: u32,
-    pub h: u32,
-    pub dx: f32,
-    pub dy: f32,
-    pub gravity: f32,
-    pub on_ground: bool,
-    physics: Box<Updatable + 'a>,
-    graphics: Box<Renderable + 'a>
-}
-
-impl<'a> GameObject<'a> {
-    pub fn new(x: f32, y: f32, physics: Box<Updatable + 'a>, graphics: Box<Renderable + 'a>) -> GameObject<'a> {
-        GameObject {
-            x: x,
-            y: y,
-            w: 32,
-            h: 32,
-            dx: 0.0,
-            dy: 0.0,
-            gravity: 0.3,
-            on_ground: false,
-            physics: physics,
-            graphics: graphics
-        }
-    }
-
-    pub fn update(&self) {
-        self.physics.update(self);
-    }
-
-    pub fn render(&self, elapsed: f64, renderer: &mut Renderer, destination: &Rect) {
-        self.graphics.render(self, elapsed, renderer, destination);
-    }
-
-    pub fn to_rect(&self) -> Rect {
-        Rect::new(self.x as i32, self.y as i32, 32, 32)
-    }
-}
-
-trait Updatable {
-    fn update(&self, &GameObject);
-}
-
-trait Renderable {
-    fn render(&self, &GameObject, f64, &mut Renderer, &Rect);
-}
 
 struct PlayerPhysicsComponent;
 
@@ -169,7 +121,6 @@ fn main() {
 
     let mut layer = Layer::new(212, 20, TILE_WIDTH, TILE_HEIGHT, Tile::Empty);
 
-
     layer.set_tile(2, 15, Tile::Background(Rect::new(16 * 9, 16 * 8, 16, 16)));
 
     layer.set_tile(1, 16, Tile::Background(Rect::new(16 * 8, 16 * 8, 16, 16)));
@@ -189,9 +140,7 @@ fn main() {
     layer.set_tile(14, 17, Tile::Background(Rect::new(16 * 12, 16 * 9, 16, 16)));
     layer.set_tile(15, 17, Tile::Background(Rect::new(16 * 13, 16 * 9, 16, 16)));
 
-
     layer.set_tile(16, 14, Tile::Floor(Rect::new(16 * 24, 16 * 0, 16, 16)));
-
 
     layer.set_tile(17, 16, Tile::Background(Rect::new(16 * 9, 16 * 8, 16, 16)));
 
@@ -199,16 +148,13 @@ fn main() {
     layer.set_tile(17, 17, Tile::Background(Rect::new(16 * 8, 16 * 9, 16, 16)));
     layer.set_tile(18, 17, Tile::Background(Rect::new(16 * 10, 16 * 8, 16, 16)));
 
-
     layer.set_tile(20, 14, Tile::Static(&brick_sprite, true));
     layer.set_tile(21, 14, Tile::Floor(Rect::new(16 * 24, 16 * 0, 16, 16)));
     layer.set_tile(22, 14, Tile::Static(&brick_sprite, true));
     layer.set_tile(23, 14, Tile::Floor(Rect::new(16 * 24, 16 * 0, 16, 16)));
     layer.set_tile(24, 14, Tile::Static(&brick_sprite, true));
 
-
     layer.set_tile(22, 10, Tile::Floor(Rect::new(16 * 24, 16 * 0, 16, 16)));
-
 
     layer.set_tile(19, 7, Tile::Floor(Rect::new(16 * 0, 16 * 20, 16, 16)));
     layer.set_tile(20, 7, Tile::Floor(Rect::new(16 * 1, 16 * 20, 16, 16)));
@@ -217,17 +163,14 @@ fn main() {
     layer.set_tile(20, 8, Tile::Floor(Rect::new(16 * 1, 16 * 21, 16, 16)));
     layer.set_tile(21, 8, Tile::Floor(Rect::new(16 * 2, 16 * 21, 16, 16)));
 
-
     layer.set_tile(23, 17, Tile::Background(Rect::new(16 * 11, 16 * 9, 16, 16)));
     layer.set_tile(24, 17, Tile::Background(Rect::new(16 * 12, 16 * 9, 16, 16)));
     layer.set_tile(25, 17, Tile::Background(Rect::new(16 * 13, 16 * 9, 16, 16)));
-
 
     layer.set_tile(28, 16, Tile::Floor(Rect::new(16 * 0, 16 * 8, 16, 16)));
     layer.set_tile(29, 16, Tile::Floor(Rect::new(16 * 1, 16 * 8, 16, 16)));
     layer.set_tile(28, 17, Tile::Floor(Rect::new(16 * 0, 16 * 9, 16, 16)));
     layer.set_tile(29, 17, Tile::Floor(Rect::new(16 * 1, 16 * 9, 16, 16)));
-
 
     layer.set_tile(38, 15, Tile::Floor(Rect::new(16 * 0, 16 * 8, 16, 16)));
     layer.set_tile(39, 15, Tile::Floor(Rect::new(16 * 1, 16 * 8, 16, 16)));
@@ -236,12 +179,10 @@ fn main() {
     layer.set_tile(38, 17, Tile::Floor(Rect::new(16 * 0, 16 * 9, 16, 16)));
     layer.set_tile(39, 17, Tile::Floor(Rect::new(16 * 1, 16 * 9, 16, 16)));
 
-
     layer.set_tile(41, 17, Tile::Background(Rect::new(16 * 11, 16 * 9, 16, 16)));
     layer.set_tile(42, 17, Tile::Background(Rect::new(16 * 12, 16 * 9, 16, 16)));
     layer.set_tile(43, 17, Tile::Background(Rect::new(16 * 12, 16 * 9, 16, 16)));
     layer.set_tile(44, 17, Tile::Background(Rect::new(16 * 13, 16 * 9, 16, 16)));
-
 
     layer.set_tile(46, 14, Tile::Floor(Rect::new(16 * 0, 16 * 8, 16, 16)));
     layer.set_tile(47, 14, Tile::Floor(Rect::new(16 * 1, 16 * 8, 16, 16)));
@@ -251,7 +192,6 @@ fn main() {
     layer.set_tile(47, 16, Tile::Floor(Rect::new(16 * 1, 16 * 9, 16, 16)));
     layer.set_tile(46, 17, Tile::Floor(Rect::new(16 * 0, 16 * 9, 16, 16)));
     layer.set_tile(47, 17, Tile::Floor(Rect::new(16 * 1, 16 * 9, 16, 16)));
-
 
     layer.set_tile(50, 15, Tile::Background(Rect::new(16 * 9, 16 * 8, 16, 16)));
 
@@ -265,12 +205,10 @@ fn main() {
     layer.set_tile(51, 17, Tile::Background(Rect::new(16 * 8, 16 * 9, 16, 16)));
     layer.set_tile(52, 17, Tile::Background(Rect::new(16 * 10, 16 * 8, 16, 16)));
 
-
     for x in 0..212 {
         layer.set_tile(x, 18, Tile::Static(&floor_sprite, true));
         layer.set_tile(x, 19, Tile::Static(&floor_sprite, true));
     }
-
 
     let mut camera = Camera::new(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, layer.to_rect());
 

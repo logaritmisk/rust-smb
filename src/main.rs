@@ -3,7 +3,7 @@ extern crate sdl2_image;
 
 
 use std::path::Path;
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 use std::collections::HashMap;
 
 use sdl2_image::LoadTexture;
@@ -105,12 +105,16 @@ impl Updatable for PlayerPhysicsComponent {
 
 
 struct PlayerGraphicsComponent<'a> {
+    flip_horizontal: Cell<bool>,
+    sprite_standing: RefCell<StaticSprite<'a>>,
     sprite_running: RefCell<AnimatedSprite<'a>>
 }
 
 impl<'a> PlayerGraphicsComponent<'a> {
     pub fn new(texture: &'a Texture) -> PlayerGraphicsComponent<'a> {
         PlayerGraphicsComponent {
+            flip_horizontal: Cell::new(false),
+            sprite_standing: RefCell::new(StaticSprite::new(&texture, 80, 32)),
             sprite_running: RefCell::new(AnimatedSprite::new(&texture, 96, 32, 3, 10.0))
         }
     }
@@ -118,15 +122,25 @@ impl<'a> PlayerGraphicsComponent<'a> {
 
 impl<'a> Renderable for PlayerGraphicsComponent<'a> {
     fn render(&self, object: &GameObject, elapsed: f64, renderer: &mut Renderer, destination: &Rect) {
-        let mut sprite = self.sprite_running.borrow_mut();
+        if object.dx == 0.0 {
+            let mut sprite = self.sprite_standing.borrow_mut();
 
-        if object.dx < 0.0 {
-            sprite.flip_horizontal = true;
-        } else if object.dx > 0.0 {
-            sprite.flip_horizontal = false;
-        }
+            sprite.flip_horizontal = self.flip_horizontal.get();
 
-        sprite.render(elapsed, renderer, destination);
+            sprite.render(elapsed, renderer, destination);
+        } else {
+            let mut sprite = self.sprite_running.borrow_mut();
+
+            if object.dx < 0.0 {
+                sprite.flip_horizontal = true;
+                self.flip_horizontal.set(true);
+            } else if object.dx > 0.0 {
+                sprite.flip_horizontal = false;
+                self.flip_horizontal.set(false);
+            }
+
+            sprite.render(elapsed, renderer, destination);
+        };
     }
 }
 

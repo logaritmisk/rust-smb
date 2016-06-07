@@ -54,8 +54,6 @@ struct GameObject<'a> {
     pub dy: f32,
     pub gravity: f32,
     pub on_ground: bool,
-    pub flip_horizontal: bool,
-    pub flip_vertical: bool,
     physics: Box<Updatable + 'a>,
     graphics: Box<Renderable + 'a>
 }
@@ -71,8 +69,6 @@ impl<'a> GameObject<'a> {
             dy: 0.0,
             gravity: 0.3,
             on_ground: false,
-            flip_horizontal: false,
-            flip_vertical: false,
             physics: physics,
             graphics: graphics
         }
@@ -124,8 +120,11 @@ impl<'a> Renderable for PlayerGraphicsComponent<'a> {
     fn render(&self, object: &GameObject, elapsed: f64, renderer: &mut Renderer, destination: &Rect) {
         let mut sprite = self.sprite_running.borrow_mut();
 
-        sprite.flip_horizontal = object.flip_horizontal;
-        sprite.flip_vertical = object.flip_vertical;
+        if object.dx < 0.0 {
+            sprite.flip_horizontal = true;
+        } else if object.dx > 0.0 {
+            sprite.flip_horizontal = false;
+        }
 
         sprite.render(elapsed, renderer, destination);
     }
@@ -315,7 +314,6 @@ fn main() {
             };
 
             player.dx = a * PLAYER_SPEED_X + (1.0 - a) * player.dx;
-            player.flip_horizontal = false;
         } else if keyboard.is_held(Keycode::Left) && (player.dx <= 0.0 || player.on_ground) {
             let a = if player.dx < 0.0 {
                 PLAYER_ACCELERATION_X_START
@@ -324,7 +322,6 @@ fn main() {
             };
 
             player.dx = a * -PLAYER_SPEED_X + (1.0 - a) * player.dx;
-            player.flip_horizontal = true;
         } else if player.on_ground {
             player.dx = (1.0 - PLAYER_ACCELERATION_X_STOP) * player.dx;
 

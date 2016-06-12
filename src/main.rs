@@ -181,21 +181,12 @@ fn main() {
             use sdl2::event::Event;
 
             match event {
+                Event::KeyDown {keycode, ..} if keycode == Some(Keycode::Escape) => break 'main,
                 Event::Quit {..} => break 'main,
-                Event::KeyDown {keycode, repeat, ..} => {
-                    if repeat == false {
-                        keyboard.key_down(keycode.unwrap());
-                    }
-                },
-                Event::KeyUp {keycode, ..} => {
-                    keyboard.key_up(keycode.unwrap());
-                },
                 _ => (),
             }
-        }
 
-        if keyboard.was_pressed(Keycode::Escape) {
-            break 'main;
+            keyboard.process(&event);
         }
 
         if keyboard.is_held(Keycode::Right) && (player.dx >= 0.0 || player.on_ground) {

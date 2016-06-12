@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
+use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
-
 
 pub struct KeyboardHandler {
     pressed_keys: HashMap<Keycode, bool>,
@@ -15,6 +15,20 @@ impl KeyboardHandler {
             pressed_keys: HashMap::new(),
             released_keys: HashMap::new(),
             held_keys: HashMap::new()
+        }
+    }
+
+    pub fn process(&mut self, event: &Event) {
+        match *event {
+            Event::KeyDown {keycode, repeat, ..} => {
+                if repeat == false {
+                    self.key_down(keycode.unwrap());
+                }
+            },
+            Event::KeyUp {keycode, ..} => {
+                self.key_up(keycode.unwrap());
+            },
+            _ => (),
         }
     }
 

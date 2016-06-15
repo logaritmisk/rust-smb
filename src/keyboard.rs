@@ -6,7 +6,7 @@ use sdl2::keyboard::Keycode;
 pub struct KeyboardHandler {
     pressed_keys: HashMap<Keycode, bool>,
     released_keys: HashMap<Keycode, bool>,
-    held_keys: HashMap<Keycode, bool>
+    held_keys: HashMap<Keycode, bool>,
 }
 
 impl KeyboardHandler {
@@ -14,7 +14,7 @@ impl KeyboardHandler {
         KeyboardHandler {
             pressed_keys: HashMap::new(),
             released_keys: HashMap::new(),
-            held_keys: HashMap::new()
+            held_keys: HashMap::new(),
         }
     }
 

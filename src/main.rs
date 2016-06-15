@@ -67,7 +67,7 @@ fn main() {
 
     let timer = Timer::new();
 
-    let mut player = GameObject::new(390.0, 390.0, Box::new(PlayerPhysicsComponent), Box::new(PlayerGraphicsComponent::new(&player_sprites)));
+    let mut player = GameObject::new(390.0, 390.0, Box::new(PlayerPhysicsComponent::new()), Box::new(PlayerGraphicsComponent::new(&player_sprites)));
 
     let mut keyboard = KeyboardHandler::new();
 

@@ -8,9 +8,9 @@ pub struct GameObject<'a> {
     pub y: f32,
     pub w: u32,
     pub h: u32,
-    pub dx: f32,
-    pub dy: f32,
-    pub gravity: f32,
+    pub dx: f32, // TODO moved to PlayerPhysicsComponent
+    pub dy: f32, // TODO moved to PlayerPhysicsComponent
+    pub gravity: f32, // TODO moved to PlayerPhysicsComponent
     pub on_ground: bool,
     physics: Box<Updatable + 'a>,
     graphics: Box<Renderable + 'a>

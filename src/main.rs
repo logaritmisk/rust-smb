@@ -58,12 +58,12 @@ fn main() {
     let window = video_subsystem.window("Super Matte Bros", SCREEN_WIDTH, SCREEN_HEIGHT).position_centered().build().unwrap();
     let mut renderer = window.renderer().software().build().unwrap();
 
-    let world_sprites = renderer.load_texture(&Path::new("gfx/world.png")).unwrap();
+    let world_sprites = renderer.load_texture(Path::new("gfx/world.png")).unwrap();
 
     let floor_sprite = StaticSprite::new(&world_sprites, 16 * 0, 16 * 0);
     let brick_sprite = StaticSprite::new(&world_sprites, 16 * 1, 16 * 0);
 
-    let player_sprites = renderer.load_texture(&Path::new("gfx/mario.png")).unwrap();
+    let player_sprites = renderer.load_texture(Path::new("gfx/mario.png")).unwrap();
 
     let timer = Timer::new();
 
@@ -206,25 +206,21 @@ fn main() {
 
             player.dx = a * -PLAYER_SPEED_X + (1.0 - a) * player.dx;
         } else if player.on_ground {
-            player.dx = (1.0 - PLAYER_ACCELERATION_X_STOP) * player.dx;
+            player.dx *= 1.0 - PLAYER_ACCELERATION_X_STOP;
 
             if player.dx.abs() <= PLAYER_THRESHOLD_X {
                 player.dx = 0.0;
             }
         }
 
-        if player.on_ground {
-            if keyboard.was_pressed(Keycode::Up) {
-                player.dy = -8.0;
+        if player.on_ground && keyboard.was_pressed(Keycode::Up) {
+            player.dy = -8.0;
 
-                player.on_ground = false;
-            }
+            player.on_ground = false;
         }
 
-        if keyboard.was_released(Keycode::Up) {
-            if player.dy < -4.0 {
-                player.dy = -4.0;
-            }
+        if keyboard.was_released(Keycode::Up) && player.dy < -4.0 {
+            player.dy = -4.0;
         }
 
         while lag >= MS_PER_UPDATE {
@@ -406,12 +402,7 @@ fn main() {
             let object = camera.to_relative_rect(position);
 
             match *tile {
-                Tile::Background(src) => {
-                    renderer.copy(&world_sprites, Some(src), Some(object));
-                },
-                Tile::Floor(src) => {
-                    renderer.copy(&world_sprites, Some(src), Some(object));
-                },
+                Tile::Background(src) | Tile::Floor(src) => renderer.copy(&world_sprites, Some(src), Some(object)),
                 Tile::Static(ref sprite, _) => sprite.render(lag / MS_PER_UPDATE, &mut renderer, &object),
                 _ => ()
             }

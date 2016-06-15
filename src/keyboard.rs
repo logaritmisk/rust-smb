@@ -21,7 +21,7 @@ impl KeyboardHandler {
     pub fn process(&mut self, event: &Event) {
         match *event {
             Event::KeyDown {keycode, repeat, ..} => {
-                if repeat == false {
+                if !repeat {
                     self.key_down(keycode.unwrap());
                 }
             },

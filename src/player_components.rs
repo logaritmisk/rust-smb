@@ -25,9 +25,9 @@ impl<'a> PlayerGraphicsComponent<'a> {
     pub fn new(texture: &'a Texture) -> PlayerGraphicsComponent<'a> {
         PlayerGraphicsComponent {
             flip_horizontal: Cell::new(false),
-            sprite_standing: RefCell::new(StaticSprite::new(&texture, 80, 32)),
-            sprite_running: RefCell::new(AnimatedSprite::new(&texture, 96, 32, 3, 10.0)),
-            sprite_jumping: RefCell::new(StaticSprite::new(&texture, 160, 32))
+            sprite_standing: RefCell::new(StaticSprite::new(texture, 80, 32)),
+            sprite_running: RefCell::new(AnimatedSprite::new(texture, 96, 32, 3, 10.0)),
+            sprite_jumping: RefCell::new(StaticSprite::new(texture, 160, 32))
         }
     }
 }

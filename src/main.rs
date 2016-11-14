@@ -402,7 +402,7 @@ fn main() {
             let object = camera.to_relative_rect(position);
 
             match *tile {
-                Tile::Background(src) | Tile::Floor(src) => renderer.copy(&world_sprites, Some(src), Some(object)),
+                Tile::Background(src) | Tile::Floor(src) => renderer.copy(&world_sprites, Some(src), Some(object)).unwrap(),
                 Tile::Static(ref sprite, _) => sprite.render(lag / MS_PER_UPDATE, &mut renderer, &object),
                 _ => ()
             }

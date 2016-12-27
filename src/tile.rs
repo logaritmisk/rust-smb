@@ -1,10 +1,9 @@
-use std::iter::repeat;
-
 use sdl2::rect::Rect;
 
 
 pub struct Layer<T> {
-    tiles: Vec<T>,
+    tiles: Vec<Option<T>>,
+    default: T,
     width: u32,
     height: u32,
     tile_width: u32,
@@ -12,9 +11,11 @@ pub struct Layer<T> {
 }
 
 impl<T> Layer<T> where T: Clone {
+    // TODO Change u32 to usize for width and height?
     pub fn new(width: u32, height: u32, tile_width: u32, tile_height: u32, tile: T) -> Layer<T> {
         Layer {
-            tiles: repeat(tile).take((width * height) as usize).collect(),
+            tiles: vec![None; (width * height) as usize],
+            default: tile,
             width: width,
             height: height,
             tile_width: tile_width,
@@ -22,20 +23,19 @@ impl<T> Layer<T> where T: Clone {
         }
     }
 
-    pub fn get_tile(&self, x: i32, y: i32) -> Option<&T> {
+    pub fn get_tile(&self, x: i32, y: i32) -> &T {
         let offset = (x + y * self.width as i32) as usize;
 
-        if offset < self.tiles.len() {
-            Some(&self.tiles[offset])
-        } else {
-            None
+        match *self.tiles.get(offset).unwrap() {
+            Some(ref tile) => tile,
+            None           => &self.default
         }
     }
 
     pub fn set_tile(&mut self, x: i32, y: i32, tile: T) {
         let offset = (x + y * self.width as i32) as usize;
 
-        self.tiles[offset] = tile;
+        self.tiles[offset] = Some(tile);
     }
 
     pub fn find_intersecting(&self, rect: &Rect) -> Option<Rect> {
@@ -61,7 +61,7 @@ impl<T> Layer<T> where T: Clone {
                 for x in intersect.x()..(intersect.x() + intersect.width() as i32) {
                     let position = Rect::new(x * self.tile_width as i32, y * self.tile_height as i32, self.tile_width, self.tile_height);
 
-                    f(self.get_tile(x, y).unwrap(), &position);
+                    f(self.get_tile(x, y), &position);
                 }
             }
         }
@@ -74,9 +74,9 @@ impl<T> Layer<T> where T: Clone {
 
 #[cfg(test)]
 mod tests {
-    use super::Layer;
-
     use sdl2::rect::Rect;
+
+    use super::*;
 
     #[test]
     fn layer_find_intersecting() {

@@ -1,4 +1,3 @@
-#[deny(trivial_casts, trivial_numeric_casts)]
 extern crate sdl2;
 extern crate sdl2_image;
 
@@ -17,6 +16,7 @@ use timer::Timer;
 use game_object::GameObject;
 use player_components::{PlayerPhysicsComponent, PlayerGraphicsComponent};
 
+
 mod timer;
 mod tile;
 mod camera;
@@ -25,6 +25,7 @@ mod sprite;
 mod game_object;
 mod component;
 mod player_components;
+
 
 const SCREEN_WIDTH : u32 = 960;
 const SCREEN_HEIGHT : u32 = 640;
@@ -41,6 +42,7 @@ const PLAYER_ACCELERATION_X_START : f32 = 0.02;
 const PLAYER_ACCELERATION_X_STOP : f32 = 0.15;
 const PLAYER_ACCELERATION_X_CHANGE : f32 = 0.06;
 
+
 #[derive(Clone)]
 enum Tile<'a> {
     Empty,
@@ -48,6 +50,7 @@ enum Tile<'a> {
     Background(Rect),
     Floor(Rect)
 }
+
 
 fn main() {
     let sdl_context = sdl2::init().unwrap();
@@ -249,15 +252,11 @@ fn main() {
                                 break;
                             }
 
-                            if let Some(tile) = layer.get_tile(x, y) {
-                                d = match *tile {
-                                    Tile::Floor(_) => d.min(t),
-                                    Tile::Static(_, solid) => if solid { d.min(t) } else { d },
-                                    _ => d
-                                }
-                            } else {
-                                break;
-                            }
+                            d = match *layer.get_tile(x, y) {
+                                Tile::Floor(_) => d.min(t),
+                                Tile::Static(_, solid) => if solid { d.min(t) } else { d },
+                                _ => d
+                            };
 
                             x += 1;
                         }
@@ -285,15 +284,11 @@ fn main() {
                                 break;
                             }
 
-                            if let Some(tile) = layer.get_tile(x, y) {
-                                d = match *tile {
-                                    Tile::Floor(_) => d.max(t),
-                                    Tile::Static(_, solid) => if solid { d.max(t) } else { d },
-                                    _ => d
-                                }
-                            } else {
-                                break;
-                            }
+                            d = match *layer.get_tile(x, y) {
+                                Tile::Floor(_) => d.max(t),
+                                Tile::Static(_, solid) => if solid { d.max(t) } else { d },
+                                _ => d
+                            };
 
                             x -= 1;
                         }
@@ -323,15 +318,11 @@ fn main() {
                                 break;
                             }
 
-                            if let Some(tile) = layer.get_tile(x, y) {
-                                d = match *tile {
-                                    Tile::Floor(_) => d.min(t),
-                                    Tile::Static(_, solid) => if solid { d.min(t) } else { d },
-                                    _ => d
-                                }
-                            } else {
-                                break;
-                            }
+                            d = match *layer.get_tile(x, y) {
+                                Tile::Floor(_) => d.min(t),
+                                Tile::Static(_, solid) => if solid { d.min(t) } else { d },
+                                _ => d
+                            };
 
                             y += 1;
                         }
@@ -363,15 +354,11 @@ fn main() {
                                 break;
                             }
 
-                            if let Some(tile) = layer.get_tile(x, y) {
-                                d = match *tile {
-                                    Tile::Floor(_) => d.max(t),
-                                    Tile::Static(_, solid) => if solid { d.max(t) } else { d },
-                                    _ => d
-                                }
-                            } else {
-                                break;
-                            }
+                            d = match *layer.get_tile(x, y) {
+                                Tile::Floor(_) => d.max(t),
+                                Tile::Static(_, solid) => if solid { d.max(t) } else { d },
+                                _ => d
+                            };
 
                             y -= 1;
                         }

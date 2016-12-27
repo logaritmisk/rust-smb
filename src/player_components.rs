@@ -7,6 +7,7 @@ use sprite::{Sprite, StaticSprite, AnimatedSprite};
 use game_object::GameObject;
 use component::{Updatable, Renderable};
 
+
 pub struct PlayerPhysicsComponent {
     pub dx: f32,
     pub dy: f32,
@@ -27,6 +28,7 @@ impl Updatable for PlayerPhysicsComponent {
     fn update(&self, _: &GameObject) {
     }
 }
+
 
 pub struct PlayerGraphicsComponent<'a> {
     flip_horizontal: Cell<bool>,
